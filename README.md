@@ -11,11 +11,11 @@ Old, ugly way of logging makes for thousands of opaque logs:
 - [and on and on for 1000+ entries - oiy!]
 
 But with structured and grouped logging, you get a fewer logs that group similar logs together and makes them searchable:
-```
-{
+
+```{
     "MessageTemplate": "User {email} signed in at {date}",
     "Level": "Information",
-	"OccurrencesCount": 1032
+    "OccurrencesCount": 1032
     "FirstOccurrence": "2017-09-27T17:29:46.6597966+00:00",
     "LastOccurrence": "2017-09-27T17:39:50.5554997+00:00",
     "Occurrences": [
@@ -23,20 +23,17 @@ But with structured and grouped logging, you get a fewer logs that group similar
             "Message": "User foo@bar.com signed in at 5:13 Oct 7",
             "Level": "Information",
             "Created": "2017-09-27T17:39:48.4248681+00:00",
-            "Exception": null,
             "Category": "Sample.Controllers.HomeController",
             "EventId": null,
             "TemplateValues": {
                 "{OriginalFormat}": "User {email} signed in at {date}",
 				"email": "foo@bar.com",
 				"date": "5:13 Oct 7"
-            },
-            "Scope": {}
+            }
         },
 		...all log occurrences, trimmed with a user-specified maximum
     ],
-    
-}
+}```
 
 The end result is humans can easily understand what errors are occurring in your software and how often. Moreover, unlike old school logging where logs are giant opaque strings, structured logs are searchable as their template values are extracted and stored outside the log message.
 
