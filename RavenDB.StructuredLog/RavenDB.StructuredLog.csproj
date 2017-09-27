@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="create-nuget-package.bat" />
+    <None Remove="nuget-icon.png" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <Description>ILogger that structures and groups logs together and stores them in RavenDB. Makes your logs easy to reason about.</Description>
+    <Authors>Judah Gabriel Himango</Authors>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <AssemblyName>RavenDB.StructuredLogger</AssemblyName>
+    <Title>RavenDB StructuredLogger</Title>
+    <PackageId>RavenDB.StructuredLogger</PackageId>
+    <PackageTags>ravendb;logging;aspnetcore;logger;nosql;</PackageTags>
+    <PackageProjectUrl>https://github.com/JudahGabriel/RavenDB.StructuredLog</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/JudahGabriel/RavenDB.StructuredLog</RepositoryUrl>
+    <PackageLicenseUrl>https://github.com/JudahGabriel/RavenDB.StructuredLog/blob/master/LICENSE.md</PackageLicenseUrl>
+    <PackageIconUrl>https://github.com/JudahGabriel/RavenDB.StructuredLog/blob/master/RavenDB.StructuredLog/nuget-icon.png?raw=true</PackageIconUrl>
+    <copyright>Copyright 2017 BitShuva</copyright>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <Version>1.0.0</Version>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.0.0" />
+    <PackageReference Include="RavenDB.Client" Version="3.5.5-patch-35221" />
+    <PackageReference Include="System.Reactive" Version="3.1.1" />
+  </ItemGroup>
+
+</Project>
