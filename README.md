@@ -11,8 +11,8 @@ Old, ugly way of logging makes for thousands of opaque logs:
 - [and on and on for 1000+ entries - oiy!]
 
 But with structured and grouped logging, you get a fewer logs that group similar logs together and makes them searchable:
-
-```{
+```
+{
     "MessageTemplate": "User {email} signed in at {date}",
     "Level": "Information",
     "OccurrencesCount": 1032
@@ -33,7 +33,8 @@ But with structured and grouped logging, you get a fewer logs that group similar
         },
         ...all log occurrences, trimmed with a user-specified maximum
     ],
-}```
+}
+```
 
 The end result is humans can easily understand what errors are occurring in your software and how often. Moreover, unlike old school logging where logs are giant opaque strings, structured logs are searchable as their template values are extracted and stored outside the log message.
 
