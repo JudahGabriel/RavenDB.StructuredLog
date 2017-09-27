@@ -27,11 +27,11 @@ But with structured and grouped logging, you get a fewer logs that group similar
             "EventId": null,
             "TemplateValues": {
                 "{OriginalFormat}": "User {email} signed in at {date}",
-				"email": "foo@bar.com",
-				"date": "5:13 Oct 7"
+                "email": "foo@bar.com",
+                "date": "5:13 Oct 7"
             }
         },
-		...all log occurrences, trimmed with a user-specified maximum
+        ...all log occurrences, trimmed with a user-specified maximum
     ],
 }```
 
