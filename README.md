@@ -32,7 +32,7 @@ But with structured and grouped logging, you get a fewer logs that group similar
             }
         },
         ...all log occurrences, trimmed with a user-specified maximum
-    ],
+    ]
 }
 ```
 

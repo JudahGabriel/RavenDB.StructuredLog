@@ -49,11 +49,25 @@ namespace RavenDB.StructuredLog
             return scope;
         }
 
+        /// <summary>
+        /// Gets whether the logger is enabled.
+        /// </summary>
+        /// <param name="logLevel"></param>
+        /// <returns></returns>
         public bool IsEnabled(LogLevel logLevel)
         {
             return true;
         }
 
+        /// <summary>
+        /// Writes the log asynchronously to Raven.
+        /// </summary>
+        /// <typeparam name="TState"></typeparam>
+        /// <param name="logLevel"></param>
+        /// <param name="eventId"></param>
+        /// <param name="state"></param>
+        /// <param name="exception"></param>
+        /// <param name="formatter"></param>
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
         {
             if (this.IsEnabled(logLevel))
@@ -70,7 +84,8 @@ namespace RavenDB.StructuredLog
                 }
                 
                 var message = formatter(state, exception);
-                var structuredLogHash = GenerateStructuredHash(message, exception, details);
+                var structuredLogHash = GenerateStructuredHash(message, exception, details);               
+
                 var log = new Log
                 {
                     Created = DateTime.UtcNow,
@@ -115,25 +130,6 @@ namespace RavenDB.StructuredLog
             var dictionary = new Dictionary<string, object>(this.scopeOrNull.Count * 3);
             var unnamedValues = 0;
 
-            string GetUniqueScopeName(string desired)
-            {
-                if (dictionary.ContainsKey(desired))
-                {
-                    for (var i = 2; i < 50; i++) // We should be able to find a unique name within 50 tries. If not, we'll just use a GUID.
-                    {
-                        var newName = desired + "_" + i.ToString();
-                        if (!dictionary.ContainsKey(newName))
-                        {
-                            return newName;
-                        }
-                    }
-
-                    return Guid.NewGuid().ToString();
-                }
-
-                return desired;
-            }
-
             string GetNextNoNameKey()
             {
                 for (var i = unnamedValues; i < 50; i++)
@@ -158,19 +154,19 @@ namespace RavenDB.StructuredLog
                     dictionary.Add(key, scopeObj.Value.ToString());
                     foreach (var pair in logValues)
                     {
-                        dictionary.Add(GetUniqueScopeName(key + "_" + pair.Key), pair.Value);
+                        dictionary.Add(GetUniqueDictionaryKey(dictionary, key + "_" + pair.Key), pair.Value);
                     }
                 }
                 else if (scopeObj.Value is IEnumerable<KeyValuePair<string, object>> pairs)
                 {
                     foreach (var pair in pairs)
                     {
-                        dictionary.Add(GetUniqueScopeName(pair.Key), pair.Value);
+                        dictionary.Add(GetUniqueDictionaryKey(dictionary, pair.Key), pair.Value);
                     }
                 }
                 else if (scopeObj.Value is KeyValuePair<string, object> pair)
                 {
-                    dictionary.Add(GetUniqueScopeName(pair.Key), pair.Value);
+                    dictionary.Add(GetUniqueDictionaryKey(dictionary, pair.Key), pair.Value);
                 }
                 else
                 {
@@ -180,7 +176,26 @@ namespace RavenDB.StructuredLog
 
             return dictionary;
         }
-        
+
+        private static string GetUniqueDictionaryKey(IDictionary<string, object> dictionary, string desired)
+        {
+            if (dictionary.ContainsKey(desired))
+            {
+                for (var i = 2; i < 50; i++) // We should be able to find a unique name within 50 tries. If not, we'll just use a GUID.
+                {
+                    var newName = desired + "_" + i.ToString();
+                    if (!dictionary.ContainsKey(newName))
+                    {
+                        return newName;
+                    }
+                }
+
+                return Guid.NewGuid().ToString();
+            }
+
+            return desired;
+        }
+
         private static int CalculateHash(string input)
         {
             // We can't use input.GetHashCode in .NET Core, as it can (and does!) return different values each time the app is run.
