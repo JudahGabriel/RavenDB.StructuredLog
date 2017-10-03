@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Raven.Client;
 using System;
@@ -9,63 +10,41 @@ using System.Threading.Tasks;
 
 namespace RavenDB.StructuredLog
 {
+    /// <summary>
+    /// Logging provider that structures and groups logs and stores them in RavenDB.
+    /// </summary>
     public class RavenStructuredLoggerProvider : ILoggerProvider
     {
         private readonly IDocumentStore db;
+        private const int DefaultMaxStrucutedLogOccurrences = 20;
 
+        /// <summary>
+        /// Creates a new instance.
+        /// </summary>
+        /// <param name="db">The RavenDB <see cref="IDocumentStore"/> instance to store the logs with.</param>
         public RavenStructuredLoggerProvider(IDocumentStore db)
         {
             this.db = db ?? throw new ArgumentNullException(nameof(db));
         }
 
+        /// <summary>
+        /// Creates a new logger.
+        /// </summary>
+        /// <param name="categoryName"></param>
+        /// <returns></returns>
         public ILogger CreateLogger(string categoryName)
         {
             return new RavenStructuredLogger(categoryName, this.db);
         }
 
+        /// <summary>
+        /// Disposes the log provider.
+        /// </summary>
         public void Dispose()
         {
         }
-    }
 
-    /// <summary>
-    /// Extends <see cref="ILoggingBuilder"/> with methods to install the Raven Structured logger.
-    /// </summary>
-    public static class RavenLoggerExtensions
-    {
-        /// <summary>
-        /// Configures logging services to use RavenDB structured logging.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <param name="ravenDb">The RavenDB database singleton.</param>
-        /// <param name="level"></param>
-        /// <returns></returns>
-        public static ILoggingBuilder AddRavenStructuredLogger(this ILoggingBuilder builder, IDocumentStore ravenDb)
-        {
-            var provider = new RavenStructuredLoggerProvider(ravenDb);
-            builder.AddProvider(provider);
-            return builder;
-        }
-
-        /// <summary>
-        /// Configures logging services to use RavenDB structured logging. The RavenDB document store must be added to the dependency injection services.
-        /// </summary>
-        /// <param name="builder"></param>
-        /// <returns></returns>
-        /// <exception cref="InvalidOperationException">Couldn't find the RavenDB document store singleton.</exception>
-        public static ILoggingBuilder AddRavenStructuredLogger(this ILoggingBuilder builder)
-        {
-            IDocumentStore docStore;
-            try
-            {
-                docStore = builder.Services.BuildServiceProvider().GetRequiredService<IDocumentStore>();
-            }
-            catch (InvalidOperationException noDocStoreError)
-            {
-                throw new InvalidOperationException("Before calling AddRavenStructuredLogger(), please add a RavenDB DocumentStore to the dependencies in Startup.ConfigureServices: services.AddSingleton<IDocumentStore>(db)", noDocStoreError);
-            }
-
-            return AddRavenStructuredLogger(builder, docStore);
-        }
+        internal static bool IncludeScopes { get; set; } = true;
+        internal static int MaxStructuredLogOccurrences { get; set; } = MaxStructuredLogOccurrences;
     }
 }

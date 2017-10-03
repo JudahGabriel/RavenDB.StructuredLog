@@ -34,7 +34,8 @@ namespace Sample.Controllers
             // Logging exceptions with templates
             logger.LogError(exception, "Woops, an error occurred executing {action} at {date}", this.ControllerContext.ActionDescriptor.ActionName, DateTime.UtcNow);
 
-            // Logging with scopes
+            // Logging with scopes.
+            // Note: Scopes will be logged only if appsettings.json has "IncludeScopes: true" inside the Logging section.
             using (logger.BeginScope(42))
             {
                 logger.LogInformation("This message will have forty-two stored with it");
@@ -42,9 +43,9 @@ namespace Sample.Controllers
 
             // Logging with multiple scopes.
             var totalCount = 777;
-            using (logger.BeginScope(42))
-            using (logger.BeginScope("The current user is {user}", User.Identity.Name))
-            using (logger.BeginKeyValueScope(nameof(totalCount), totalCount))
+            using (logger.BeginScope(42)) // Plain value scopes.
+            using (logger.BeginScope("The current user is {user}", User.Identity.Name)) // Template scopes
+            using (logger.BeginKeyValueScope(nameof(totalCount), totalCount)) // Key-value pair scopes
             {
                 logger.LogInformation("This log will contain forty-two, the current signed in user name, and a key-value pair containing the name of the totalCount variable and its value.");
             }

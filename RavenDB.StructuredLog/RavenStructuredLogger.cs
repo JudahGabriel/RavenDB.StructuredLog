@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace RavenDB.StructuredLog
@@ -12,13 +13,19 @@ namespace RavenDB.StructuredLog
     /// <summary>
     /// Log provider that sends messages to RavenDB asynchronously.
     /// </summary>
-    /// <typeparam name="T"></typeparam>
     public class RavenStructuredLogger : ILogger
     {
         private readonly Subject<Log> logs = new Subject<Log>();
         private readonly string categoryName;
         private List<RavenStructuredLogScope> scopeOrNull;
 
+        private const string originalFormat = "{OriginalFormat}";
+
+        /// <summary>
+        /// Creates a new structured logger.
+        /// </summary>
+        /// <param name="categoryName">The name of the logger.</param>
+        /// <param name="db">The Raven <see cref="IDocumentStore"/>.</param>
         public RavenStructuredLogger(string categoryName, IDocumentStore db)
         {
             this.categoryName = categoryName;
@@ -37,6 +44,12 @@ namespace RavenDB.StructuredLog
         /// <returns></returns>
         public IDisposable BeginScope<TState>(TState state)
         {
+            // If we're not configured to use scopes, punt.
+            if (!RavenStructuredLoggerProvider.IncludeScopes)
+            {
+                return null;
+            }
+
             if (this.scopeOrNull == null)
             {
                 this.scopeOrNull = new List<RavenStructuredLogScope>(2);
@@ -84,6 +97,13 @@ namespace RavenDB.StructuredLog
                 }
                 
                 var message = formatter(state, exception);
+
+                // If the message is the same as the {OriginalFormat}, don't store the original format.
+                if (details != null && details.TryGetValue(originalFormat, out var origFormatValue) && (origFormatValue as string) == message)
+                {
+                    details.Remove(originalFormat);
+                }
+
                 var structuredLogHash = GenerateStructuredHash(message, exception, details);               
 
                 var log = new Log
@@ -111,13 +131,65 @@ namespace RavenDB.StructuredLog
             //  - "Generated 5 new items" 
             //  - "Generated 2 new items"
             var origFormatString = default(string);
-            if (details != null && details.TryGetValue("{OriginalFormat}", out var origFormat))
+            if (details != null)
             {
-                origFormatString = origFormat as string;
+                if (details.TryGetValue(originalFormat, out var origFormat))
+                {
+                    origFormatString = origFormat as string;
+                }
+                else if (details.Any())
+                {
+                    origFormatString = TryExtractFormatFromMessageWithDetails(message, details);
+                }
             }
 
             var uniqueMessage = origFormatString ?? exception?.ToString() ?? message;
             return (CalculateHash(uniqueMessage), uniqueMessage);
+        }
+
+        private string TryExtractFormatFromMessageWithDetails(string message, Dictionary<string, object> details)
+        {
+            // There is no {OriginalFormat}. Do we have details? Some log messages include details without the original format.
+            // For example, some messages will be "Request finished in 2.9422ms", and it won't contain an {OriginalFormat}.
+            // However, these messages will indeed contain the details, e.g. { "Elapsed": 2.9422 }, etc.
+            // If the message contains all the .ToString values of the details, we can recreate the message, e.g. "Request finished in {Elapsed}"
+            var detailStrings = details
+                .Select(p => new KeyValuePair<string, string>(p.Key, p.Value?.ToString()))
+                .Where(p => !string.IsNullOrEmpty(p.Value))
+                .ToList();
+            var messageContainsAllDetails = detailStrings.Count > 0 && detailStrings.All(d => message.Contains(d.Value));
+            if (messageContainsAllDetails)
+            {
+                var originalFormatBuilder = new StringBuilder(message.Length * 2);
+                var runningIndex = 0;
+                foreach (var detailPair in detailStrings)
+                {
+                    var detailIndex = message.IndexOf(detailPair.Value, runningIndex, StringComparison.Ordinal);
+                    if (detailIndex != -1)
+                    {
+                        // Append the text from the last position up until the detail value.
+                        originalFormatBuilder.Append(message, runningIndex, detailIndex - runningIndex);
+
+                        // Append the key name inside of braces, rather than the value.
+                        // e.g. "{Elapsed}", rather than "2.9422"
+                        originalFormatBuilder.Append('{');
+                        originalFormatBuilder.Append(detailPair.Key);
+                        originalFormatBuilder.Append('}');
+
+                        // Move the running index to past the value.
+                        runningIndex = detailIndex + detailPair.Value.Length;
+                    }
+                }
+
+                var originalFormat = originalFormatBuilder.ToString();
+                if (!string.IsNullOrWhiteSpace(originalFormat))
+                {
+                    return originalFormat;
+                }
+            }
+
+            // We can't recreate the original format. Return null to indicate this.
+            return null;
         }
 
         private IDictionary<string, object> ScopeToDictionary()

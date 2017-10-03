@@ -25,13 +25,15 @@ namespace Sample
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
-
-            // Create our Raven IDocumentStore singleton.
-            // This is needed by the RavenStructuredLog provider, configured in Program.cs
+            
+            // Create our Raven Structured Logger.
             var raven = this.CreateRavenDocStore();
-            services.AddSingleton<IDocumentStore>(raven);
+            services.AddLogging(builder => builder.AddRavenStructuredLogger(raven));
 
-            services.AddLogging(builder => builder.AddRavenStructuredLogger(raven)); // Where docStore is your RavenDB DocumentStore singleton.
+            // Alternately, call .AddRavenStructuredLogger() without parameters to
+            // instruct the logger to find your IDocumentStore via dependency injection services.
+            //services.AddSingleton(raven);
+            //services.AddLogging(builder => builder.AddRavenStructuredLogger());
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -19,7 +19,12 @@ namespace RavenDB.StructuredLog
         /// The template of the log messages grouped under this <see cref="StructuredLog"/>.
         /// </summary>
         public string MessageTemplate { get; set; }
-        
+
+        /// <summary>
+        /// Gets the total number of times this log has occurred. This may be different than <see cref="Occurrences"/>.Count, because <see cref="Occurrences"/> are trimmed to store a maximum number of logs.
+        /// </summary>
+        public int OccurrenceCount { get; set; }
+
         /// <summary>
         /// The log level of the most recent log occurrence.
         /// </summary>
@@ -36,17 +41,11 @@ namespace RavenDB.StructuredLog
         public DateTimeOffset LastOccurrence { get; set; }
 
         /// <summary>
-        /// The logs that are grouped under this structured log. This list is ordered by most recent to least recent, and is trimmed based on <see cref="MaxOccurrences"/>.
+        /// The logs that are grouped under this structured log. 
+        /// This list is ordered by most recent to least recent.
         /// </summary>
         public List<Log> Occurrences { get; set; } = new List<Log>();
-
-        /// <summary>
-        /// Gets the total number of times this log has occurred. This may be different than <see cref="Occurrences"/>.Count, because <see cref="Occurrences"/> are trimmed to store a maximum number of logs.
-        /// </summary>
-        public int OccurrencesCount { get; set; }
         
-        private const int MaxOccurrences = 20;
-
         /// <summary>
         /// Adds a log to the <see cref="Occurrences"/> at the top of the list.
         /// </summary>
@@ -60,12 +59,12 @@ namespace RavenDB.StructuredLog
 
             Occurrences.Insert(0, log);
             LastOccurrence = DateTimeOffset.UtcNow;
-            OccurrencesCount++;
+            OccurrenceCount++;
             Level = log.Level;
             MessageTemplate = log.Template ?? log.Message ?? string.Empty;
 
-            // We don't store an infinite number of logs inside a LogSummary. Trim them down as necessary.
-            if (Occurrences.Count > MaxOccurrences)
+            // We don't store an infinite number of logs inside Occurrences. Trim them down as necessary.
+            if (Occurrences.Count > RavenStructuredLoggerProvider.MaxStructuredLogOccurrences)
             {
                 Occurrences.RemoveAt(Occurrences.Count - 1);
             }
