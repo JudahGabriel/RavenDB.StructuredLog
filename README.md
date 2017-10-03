@@ -31,7 +31,7 @@ But with structured and grouped logging, you get a fewer logs that group similar
                 "date": "5:13 Oct 7"
             }
         },
-		{
+        {
             "Message": "User no@regerts.com signed in at 2:25 Nov 8",
             "Level": "Information",
             "Created": "2017-09-27T17:39:48.4248681+00:00",
