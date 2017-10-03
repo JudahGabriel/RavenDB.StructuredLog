@@ -7,7 +7,7 @@ The interesting parts are:
  2. appsettings.Development.json - configuration
  3. HomeController.cs - usage
 
-Startup.cs initialization:
+## Initialization - Startup.cs
  ```csharp
  // This method gets called by the runtime. Use this method to add services to the container.
 public void ConfigureServices(IServiceCollection services)
@@ -16,24 +16,30 @@ public void ConfigureServices(IServiceCollection services)
     var raven = this.CreateRavenDocStore();
     services.AddLogging(builder => builder.AddRavenStructuredLogger(raven));
 	
-	...
+	// ...
 }
 ```
 
-appsettings.Development.json configuration:
+## Configuration - appsettings.Development.json
 ```json
 "Logging": {
-	"IncludeScopes": true, // Include scopes in the logs.
-	"StructuredLogMaxOccurrences": 20, // Max number of occurrences that will be stored in a single StructuredLog. See StructuredLog.Occurrences for more info.
+	"IncludeScopes": true, 
+	"StructuredLogMaxOccurrences": 20,
 	"LogLevel": {
-		"Default": "Debug", // Log everything from your own stuff.
-		"System": "Warning", // Recommended, unless you like seeing hundreds of irrelevant logs.
-		"Microsoft": "Warning" // Ditto to above.
+		"Default": "Debug", 
+		"System": "Warning",
+		"Microsoft": "Warning"
 	}
 }
 ```
 
-HomeController.cs usage:
+IncludeScopes is used if you want to persist data stored in log scopes. (See below for more info.)
+
+StructuredLogMaxOccurrences is the max number of occurrences to store inside a StructuredLog. Default is 20.
+
+As for LogLevel, we recommend Warning for both System and Microsoft to reduce the noise in your logs.
+
+## Usage - HomeController.cs
 ```csharp
 public IActionResult Index()
 {
