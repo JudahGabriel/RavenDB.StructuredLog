@@ -11,7 +11,7 @@ Old, ugly way of logging makes for thousands of opaque logs:
 - [and on and on for 1000+ entries - oiy!]
 
 But with structured and grouped logging, you get a fewer logs that group similar logs together and makes them searchable:
-```
+```json
 {
     "MessageTemplate": "User {email} signed in at {date}",
     "Level": "Information",
