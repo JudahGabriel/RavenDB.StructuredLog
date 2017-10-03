@@ -15,7 +15,7 @@ But with structured and grouped logging, you get a fewer logs that group similar
 {
     "MessageTemplate": "User {email} signed in at {date}",
     "Level": "Information",
-    "OccurrencesCount": 1032
+    "OccurrenceCount": 1032,
     "FirstOccurrence": "2017-09-27T17:29:46.6597966+00:00",
     "LastOccurrence": "2017-09-27T17:39:50.5554997+00:00",
     "Occurrences": [
@@ -31,7 +31,18 @@ But with structured and grouped logging, you get a fewer logs that group similar
                 "date": "5:13 Oct 7"
             }
         },
-        ...all log occurrences, trimmed with a user-specified maximum
+		{
+            "Message": "User no@regerts.com signed in at 2:25 Nov 8",
+            "Level": "Information",
+            "Created": "2017-09-27T17:39:48.4248681+00:00",
+            "Category": "Sample.Controllers.HomeController",
+            "EventId": null,
+            "TemplateValues": {
+                "{OriginalFormat}": "User {email} signed in at {date}",
+                "email": "no@regerts.com",
+                "date": "2:25 Nov 8"
+            }
+        }
     ]
 }
 ```
