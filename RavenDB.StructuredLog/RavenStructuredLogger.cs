@@ -29,10 +29,11 @@ namespace RavenDB.StructuredLog
         public RavenStructuredLogger(string categoryName, IDocumentStore db)
         {
             this.categoryName = categoryName;
+            
             this.logs
                 .GroupByUntil(logs => 1, _ => Observable.Timer(TimeSpan.FromSeconds(2))) // If we log a bunch in quick succession, batch them together and log in a single trip to the DB.
                 .SelectMany(logs => logs.ToList())
-                .SubscribeOn(System.Reactive.Concurrency.TaskPoolScheduler.Default)
+                //.SubscribeOn(new System.Reactive.Concurrency.EventLoopScheduler())
                 .Subscribe(logs => TryWriteLogBatch(logs, db));
         }
 
@@ -109,7 +110,7 @@ namespace RavenDB.StructuredLog
                 var log = new Log
                 {
                     Created = DateTime.UtcNow,
-                    Exception = exception,
+                    Exception = exception?.ToDetailedString(),
                     Message = message,
                     TemplateValues = details,
                     Level = logLevel,
@@ -289,6 +290,7 @@ namespace RavenDB.StructuredLog
         {
             if (logs.Count > 0)
             {
+                Console.WriteLine("Writing! Thread is {0}", System.Threading.Thread.CurrentThread.ManagedThreadId);
                 // This occurs on a background thread. Eat any exception.
                 try
                 {

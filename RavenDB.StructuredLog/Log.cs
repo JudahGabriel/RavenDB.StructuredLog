@@ -33,9 +33,10 @@ namespace RavenDB.StructuredLog
         public DateTimeOffset Created { get; set; }
 
         /// <summary>
-        /// The exception, if any occurred. May be null.
+        /// The exception as a detailed string, if any exception occurred.
+        /// This is a string, rather than the actual exception, because the exception may (and often does) contain self-referencing objects, resulting in exceptions during serialization.
         /// </summary>
-        public Exception Exception { get; set; }
+        public string Exception { get; set; }
 
         /// <summary>
         /// The log category. This is typically the type of the logger that created this log instance.
