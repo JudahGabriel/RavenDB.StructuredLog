@@ -13,11 +13,13 @@ namespace RavenDB.StructuredLog
     /// <summary>
     /// Log provider that sends messages to RavenDB asynchronously.
     /// </summary>
-    public class RavenStructuredLogger : ILogger
+    public class RavenStructuredLogger : ILogger, IDisposable
     {
         private readonly Subject<Log> logs = new Subject<Log>();
         private readonly string categoryName;
         private List<RavenStructuredLogScope> scopeOrNull;
+        private IDisposable logsSubscriptionOrNull;
+        private IDocumentStore db;
 
         private const string originalFormat = "{OriginalFormat}";
 
@@ -29,12 +31,7 @@ namespace RavenDB.StructuredLog
         public RavenStructuredLogger(string categoryName, IDocumentStore db)
         {
             this.categoryName = categoryName;
-            
-            this.logs
-                .GroupByUntil(logs => 1, _ => Observable.Timer(TimeSpan.FromSeconds(2))) // If we log a bunch in quick succession, batch them together and log in a single trip to the DB.
-                .SelectMany(logs => logs.ToList())
-                //.SubscribeOn(new System.Reactive.Concurrency.EventLoopScheduler())
-                .Subscribe(logs => TryWriteLogBatch(logs, db));
+            this.db = db;
         }
 
         /// <summary>
@@ -86,6 +83,14 @@ namespace RavenDB.StructuredLog
         {
             if (this.IsEnabled(logLevel))
             {
+                if (this.logsSubscriptionOrNull == null)
+                {
+                    this.logsSubscriptionOrNull = this.logs
+                        .GroupByUntil(logs => 1, _ => this.CreateTimer()) // If we log a bunch in quick succession, batch them together and log in a single trip to the DB.
+                        .SelectMany(logs => logs.ToList())
+                        .Subscribe(logs => TryWriteLogBatch(logs, db));
+                }
+
                 // Convert the state to a dictionary of name/value pairs.
                 var details = default(Dictionary<string, object>);
                 if (state is IEnumerable<KeyValuePair<string, object>> list)
@@ -99,7 +104,7 @@ namespace RavenDB.StructuredLog
                 
                 var message = formatter(state, exception);
 
-                // If the message is the same as the {OriginalFormat}, don't store the original format.
+                // If the message is the same as the {OriginalFormat}, don't store the original format; it's duplicate data.
                 if (details != null && details.TryGetValue(originalFormat, out var origFormatValue) && (origFormatValue as string) == message)
                 {
                     details.Remove(originalFormat);
@@ -122,6 +127,20 @@ namespace RavenDB.StructuredLog
                 };
                 this.logs.OnNext(log);
             }
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            if (logsSubscriptionOrNull != null)
+            {
+                logsSubscriptionOrNull.Dispose();
+            }
+        }
+
+        private IObservable<long> CreateTimer()
+        {
+            return Observable.Timer(TimeSpan.FromSeconds(2));
         }
 
         private (int hash, string message) GenerateStructuredHash(string message, Exception exception, Dictionary<string, object> details)
@@ -290,7 +309,6 @@ namespace RavenDB.StructuredLog
         {
             if (logs.Count > 0)
             {
-                Console.WriteLine("Writing! Thread is {0}", System.Threading.Thread.CurrentThread.ManagedThreadId);
                 // This occurs on a background thread. Eat any exception.
                 try
                 {
