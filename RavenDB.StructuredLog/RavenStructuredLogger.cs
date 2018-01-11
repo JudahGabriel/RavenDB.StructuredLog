@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Raven.Client;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
@@ -17,7 +18,7 @@ namespace RavenDB.StructuredLog
     {
         private readonly Subject<Log> logs = new Subject<Log>();
         private readonly string categoryName;
-        private List<RavenStructuredLogScope> scopeOrNull;
+        private ConcurrentBag<RavenStructuredLogScope> scopeOrNull; // Logger is not thread safe. However, some frameworks dispose on a background thread, causing this bag to be accessed on multipl threads.
         private IDisposable logsSubscriptionOrNull;
         private IDocumentStore db;
 
@@ -35,7 +36,7 @@ namespace RavenDB.StructuredLog
         }
 
         /// <summary>
-        /// Begins a logical scope to the logger, ass
+        /// Begins a logical scope to the logger.
         /// </summary>
         /// <typeparam name="TState"></typeparam>
         /// <param name="state"></param>
@@ -50,11 +51,11 @@ namespace RavenDB.StructuredLog
 
             if (this.scopeOrNull == null)
             {
-                this.scopeOrNull = new List<RavenStructuredLogScope>(2);
+                this.scopeOrNull = new ConcurrentBag<RavenStructuredLogScope>();
             }
 
             var scope = new RavenStructuredLogScope(state);
-            scope.Disposed.Subscribe(_ => this.scopeOrNull.Remove(scope));
+            scope.Disposed.Subscribe(_ => this.scopeOrNull.TryTake(out var _));
             scopeOrNull.Add(scope);
 
             return scope;
@@ -110,8 +111,7 @@ namespace RavenDB.StructuredLog
                     details.Remove(originalFormat);
                 }
 
-                var structuredLogHash = GenerateStructuredHash(message, exception, details);               
-
+                var structuredLogHash = GenerateStructuredHash(message, exception, details);
                 var log = new Log
                 {
                     Created = DateTime.UtcNow,
@@ -120,7 +120,7 @@ namespace RavenDB.StructuredLog
                     TemplateValues = details,
                     Level = logLevel,
                     Category = categoryName,
-                    EventId = eventId.Id == 0 && eventId.Name == null ? new Nullable<EventId>() : eventId,
+                    EventId = eventId.Id == 0 && eventId.Name == null ? new EventId?() : eventId,
                     Template = structuredLogHash.message != message ? structuredLogHash.message : null, // Fill in the template only if it differs from the message.
                     TemplateHash = structuredLogHash.hash,
                     Scope = this.ScopeToDictionary()
