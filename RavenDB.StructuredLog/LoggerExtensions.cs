@@ -1,12 +1,11 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Raven.Client;
+using Raven.Client.Documents;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
-namespace RavenDB.StructuredLog
+namespace Raven.StructuredLog
 {
     /// <summary>
     /// Adds RavenStructuredLog-specific extensions to <see cref="ILogger"/> and <see cref="ILoggingBuilder"/>.

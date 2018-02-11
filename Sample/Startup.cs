@@ -6,9 +6,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using RavenDB.StructuredLog;
-using Raven.Client.Document;
+using Raven.StructuredLog;
 using Raven.Client;
+using Raven.Client.Documents;
 
 namespace Sample
 {
@@ -63,8 +63,8 @@ namespace Sample
         {
             var docStore = new DocumentStore
             {
-                Url = "http://live-test.ravendb.net",
-                DefaultDatabase = "StructuredLogDemo"
+                Urls = new[] { "http://live-test.ravendb.net" },
+                Database = "Raven.StructuredLog.Sample"
             };
             docStore.Initialize();
             return docStore;

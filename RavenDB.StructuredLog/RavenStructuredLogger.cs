@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Raven.Client;
+using Raven.Client.Documents;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ using System.Reactive.Subjects;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RavenDB.StructuredLog
+namespace Raven.StructuredLog
 {
     /// <summary>
     /// Log provider that sends messages to RavenDB asynchronously.

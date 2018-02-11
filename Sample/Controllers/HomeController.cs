@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Sample.Models;
 using Microsoft.Extensions.Logging;
-using RavenDB.StructuredLog;
+using Raven.StructuredLog;
 
 namespace Sample.Controllers
 {

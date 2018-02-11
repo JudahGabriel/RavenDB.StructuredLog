@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.0" />
-    <PackageReference Include="RavenDB.Client" Version="3.5.5-patch-35221" />
+    <PackageReference Include="RavenDB.Client" Version="4.0.0" />
   </ItemGroup>
 
   <ItemGroup>

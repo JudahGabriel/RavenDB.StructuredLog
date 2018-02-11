@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace RavenDB.StructuredLog
+namespace Raven.StructuredLog
 {
     /// <summary>
     /// A structured log containing one or more log instances.

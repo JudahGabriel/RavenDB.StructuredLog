@@ -5,7 +5,7 @@ using System.Reactive;
 using System.Reactive.Subjects;
 using System.Text;
 
-namespace RavenDB.StructuredLog
+namespace Raven.StructuredLog
 {
     internal class RavenStructuredLogScope : IDisposable
     {

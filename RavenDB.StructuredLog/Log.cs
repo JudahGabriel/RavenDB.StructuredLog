@@ -1,9 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace RavenDB.StructuredLog
+namespace Raven.StructuredLog
 {
     /// <summary>
     /// A log event. These are typically stored within a <see cref="StructuredLog"/>.
@@ -19,7 +20,7 @@ namespace RavenDB.StructuredLog
         /// <summary>
         /// The template for the message. For example, "The user {email} logged in. May be null in the case where no template string was used.
         /// </summary>
-        [Raven.Imports.Newtonsoft.Json.JsonIgnore]
+        [JsonIgnore]
         public string Template { get; set; }
 
         /// <summary>
@@ -62,7 +63,7 @@ namespace RavenDB.StructuredLog
         /// <summary>
         /// The deterministic hash code generated from the template.
         /// </summary>
-        [Raven.Imports.Newtonsoft.Json.JsonIgnore]
+        [JsonIgnore]
         public int TemplateHash { get; set; }
     }
 }

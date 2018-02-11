@@ -1,14 +1,8 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Raven.Client;
+﻿using Microsoft.Extensions.Logging;
+using Raven.Client.Documents;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace RavenDB.StructuredLog
+namespace Raven.StructuredLog
 {
     /// <summary>
     /// Logging provider that structures and groups logs and stores them in RavenDB.

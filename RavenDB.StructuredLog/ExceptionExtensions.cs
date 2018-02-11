@@ -1,15 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Collections;
+using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Linq;
-using System.Collections;
-using System.Collections.Generic;
 
-namespace RavenDB.StructuredLog
+namespace Raven.StructuredLog
 {
     /// <summary>
-    /// Extensions for stringifying exceptions. 
+    /// Extensions for stringifying exceptions.
     /// </summary>
     /// <remarks>
     /// Based on https://stackoverflow.com/a/34001508/536
@@ -154,9 +152,9 @@ namespace RavenDB.StructuredLog
         }
     }
 
-    public struct ExceptionOptions
+    internal struct ExceptionOptions
     {
-        public static readonly ExceptionOptions Default = new ExceptionOptions()
+        internal static readonly ExceptionOptions Default = new ExceptionOptions()
         {
             CurrentIndentLevel = 0,
             IndentSpaces = 4,
@@ -173,9 +171,9 @@ namespace RavenDB.StructuredLog
         internal string Indent { get { return new string(' ', this.IndentSpaces * this.CurrentIndentLevel); } }
 
         internal int CurrentIndentLevel { get; set; }
-
-        public int IndentSpaces { get; set; }
-
-        public bool OmitNullProperties { get; set; }
+        
+        internal int IndentSpaces { get; set; }
+        
+        internal bool OmitNullProperties { get; set; }
     }
 }
