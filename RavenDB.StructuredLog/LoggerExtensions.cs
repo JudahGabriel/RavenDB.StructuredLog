@@ -35,6 +35,9 @@ namespace Raven.StructuredLog
             var provider = new RavenStructuredLoggerProvider(ravenDb);
             builder.AddProvider(provider);
 
+            // Install our log index that we use for grouping log messages together.
+
+
             // See if we're configured to specify the max occurrences.
             var config = builder.Services.BuildServiceProvider().GetService<IConfiguration>();
             if (config != null && int.TryParse(config["Logging:StructuredLogMaxOccurrences"], out var maxOccurrences))
@@ -46,6 +49,12 @@ namespace Raven.StructuredLog
             if (config != null && bool.TryParse(config["Logging:IncludeScopes"], out var includeScopes))
             {
                 RavenStructuredLoggerProvider.IncludeScopes = includeScopes;
+            }
+
+            // Expiration configuration.
+            if (config != null && int.TryParse(config["Logging:ExpirationInDays"], out var expirationInDays))
+            {
+                RavenStructuredLoggerProvider.ExpirationInDays = expirationInDays;
             }
 
             return builder;
@@ -66,7 +75,7 @@ namespace Raven.StructuredLog
             }
             catch (InvalidOperationException noDocStoreError)
             {
-                throw new InvalidOperationException($"Before calling {nameof(AddRavenStructuredLogger)}(), please add a RavenDB DocumentStore to the dependencies in Startup.ConfigureServices: services.AddSingleton<IDocumentStore>(db). Alternately, call {nameof(AddRavenStructuredLogger)}(ravenStore) to pass in your Raven IDocumentStore.", noDocStoreError);
+                throw new InvalidOperationException($"Before calling {nameof(AddRavenStructuredLogger)}(), you must add a RavenDB DocumentStore to the dependencies in Startup.ConfigureServices: services.AddSingleton<IDocumentStore>(db). Alternately, call {nameof(AddRavenStructuredLogger)}(ravenStore) to pass in your Raven IDocumentStore.", noDocStoreError);
             }
 
             return AddRavenStructuredLogger(builder, docStore);

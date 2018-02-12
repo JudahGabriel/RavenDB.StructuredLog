@@ -63,7 +63,7 @@ namespace Raven.StructuredLog
             Level = log.Level;
             MessageTemplate = log.Template ?? log.Message ?? string.Empty;
 
-            // We don't store an infinite number of logs inside Occurrences. Trim them down as necessary.
+            // We don't store an infinite number of logs inside Occurrences. Trim them down as configured.
             if (Occurrences.Count > RavenStructuredLoggerProvider.MaxStructuredLogOccurrences)
             {
                 Occurrences.RemoveAt(Occurrences.Count - 1);

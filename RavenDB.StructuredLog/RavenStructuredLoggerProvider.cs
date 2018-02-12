@@ -10,7 +10,8 @@ namespace Raven.StructuredLog
     public class RavenStructuredLoggerProvider : ILoggerProvider
     {
         private readonly IDocumentStore db;
-        private const int DefaultMaxStrucutedLogOccurrences = 20;
+        private const int DefaultMaxStrucutedLogOccurrences = 20; // number of logs to store in a StructuredLog
+        private const int DefaultExpirationInDays = 365; // StructuredLogs that haven't been updated in N days will be deleted.
 
         /// <summary>
         /// Creates a new instance.
@@ -39,6 +40,7 @@ namespace Raven.StructuredLog
         }
 
         internal static bool IncludeScopes { get; set; } = true;
-        internal static int MaxStructuredLogOccurrences { get; set; } = MaxStructuredLogOccurrences;
+        internal static int MaxStructuredLogOccurrences { get; set; } = DefaultMaxStrucutedLogOccurrences;
+        internal static int ExpirationInDays { get; set; } = DefaultExpirationInDays;
     }
 }

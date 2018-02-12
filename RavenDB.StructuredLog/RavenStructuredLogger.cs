@@ -165,7 +165,24 @@ namespace Raven.StructuredLog
             }
 
             var uniqueMessage = origFormatString ?? exception?.ToString() ?? message;
-            return (CalculateHash(uniqueMessage), uniqueMessage);
+
+            // If there was no original format string, the unique message may actually be exception.ToString().
+            // That's fine, but we want something simpler for the message itself.
+            var uniqueMessageBeforeLineBreaks = uniqueMessage;
+            if (!string.IsNullOrEmpty(uniqueMessageBeforeLineBreaks))
+            {
+                var lineBreakIndex = uniqueMessage.IndexOf(Environment.NewLine);
+                if (lineBreakIndex >= 2) // must have at least some characters before the new line.
+                {
+                    uniqueMessageBeforeLineBreaks = uniqueMessage.Substring(0, lineBreakIndex);
+                }
+            }
+
+            // Calculate the hash on the unique message (including stack trace).
+            // This causes two of the same exception (e.g. "Object reference not set to an instance of an object") to be considered different
+            // when their stack traces differ.
+            var hash = CalculateHash(uniqueMessage); 
+            return (hash, uniqueMessageBeforeLineBreaks);
         }
 
         private string TryExtractFormatFromMessageWithDetails(string message, Dictionary<string, object> details)
@@ -334,8 +351,7 @@ namespace Raven.StructuredLog
                 var structuredLogs = dbSession.Load<StructuredLog>(structuredLogIds.Select(l => l.id));
                 foreach (var structuredLogInfo in structuredLogIds)
                 {
-                    // Not a remote call, not SELECT N+1: we loaded these outside the loop.
-                    var existingStructuredLog = dbSession.Load<StructuredLog>(structuredLogInfo.id);
+                    var existingStructuredLog = structuredLogs[structuredLogInfo.id];
                     if (existingStructuredLog == null)
                     {
                         existingStructuredLog = new StructuredLog();
@@ -343,6 +359,11 @@ namespace Raven.StructuredLog
                     }
 
                     existingStructuredLog.AddLog(structuredLogInfo.log);
+
+                    // Update the expiration time for this structured log.
+                    var meta = dbSession.Advanced.GetMetadataFor(existingStructuredLog);
+                    meta["@expires"] = DateTime.UtcNow.AddDays(RavenStructuredLoggerProvider.ExpirationInDays)
+                        .ToString("o", System.Globalization.CultureInfo.InvariantCulture);
                 }
 
                 dbSession.SaveChanges();
