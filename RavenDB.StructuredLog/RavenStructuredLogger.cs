@@ -164,25 +164,15 @@ namespace Raven.StructuredLog
                 }
             }
 
-            var uniqueMessage = origFormatString ?? exception?.ToString() ?? message;
-
-            // If there was no original format string, the unique message may actually be exception.ToString().
-            // That's fine, but we want something simpler for the message itself.
-            var uniqueMessageBeforeLineBreaks = uniqueMessage;
-            if (!string.IsNullOrEmpty(uniqueMessageBeforeLineBreaks))
-            {
-                var lineBreakIndex = uniqueMessage.IndexOf(Environment.NewLine);
-                if (lineBreakIndex >= 2) // must have at least some characters before the new line.
-                {
-                    uniqueMessageBeforeLineBreaks = uniqueMessage.Substring(0, lineBreakIndex);
-                }
-            }
-
             // Calculate the hash on the unique message (including stack trace).
             // This causes two of the same exception (e.g. "Object reference not set to an instance of an object") to be considered different
             // when their stack traces differ.
-            var hash = CalculateHash(uniqueMessage); 
-            return (hash, uniqueMessageBeforeLineBreaks);
+            var uniqueMessage = origFormatString ?? exception?.ToString() ?? message;
+            var hash = CalculateHash(uniqueMessage);
+
+            // For the message of the structured log, use something simpler than the unique message.
+            var resultMessage = origFormatString ?? message;
+            return (hash, resultMessage);
         }
 
         private string TryExtractFormatFromMessageWithDetails(string message, Dictionary<string, object> details)
@@ -362,8 +352,8 @@ namespace Raven.StructuredLog
 
                     // Update the expiration time for this structured log.
                     var meta = dbSession.Advanced.GetMetadataFor(existingStructuredLog);
-                    meta["@expires"] = DateTime.UtcNow.AddDays(RavenStructuredLoggerProvider.ExpirationInDays)
-                        .ToString("o", System.Globalization.CultureInfo.InvariantCulture);
+                    var expireDateIsoString = DateTime.UtcNow.AddDays(RavenStructuredLoggerProvider.ExpirationInDays).ToString("o", System.Globalization.CultureInfo.InvariantCulture);
+                    meta["@expires"] = expireDateIsoString;
                 }
 
                 dbSession.SaveChanges();
