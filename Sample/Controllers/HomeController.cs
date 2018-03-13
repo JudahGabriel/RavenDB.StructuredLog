@@ -40,23 +40,14 @@ namespace Sample.Controllers
             {
                 logger.LogInformation("This message will have forty-two stored with it");
             }
-
-            try
-            {
-                CallNestedFunctionThatThrows();
-            }
-            catch (Exception error)
-            {
-                logger.LogError(error, error.Message);
-            }
-
+            
             // Logging with multiple scopes.
             var totalCount = 777;
             using (logger.BeginScope(42)) // Plain value scopes.
             using (logger.BeginScope("The current user is {user}", User.Identity.Name)) // Template scopes
-            using (logger.BeginKeyValueScope(nameof(totalCount), totalCount)) // Key-value pair scopes
+            using (logger.BeginKeyValueScope("total count", totalCount)) // Key-value pair scopes
             {
-                logger.LogInformation("This log will contain forty-two, the current signed in user name, and a key-value pair containing the name of the totalCount variable and its value.");
+                logger.LogInformation("This log will contain forty-two, the current signed in user name, and the total count name and value");
             }
 
             return View();
@@ -64,13 +55,54 @@ namespace Sample.Controllers
 
         private void CallNestedFunctionThatThrows()
         {
-            this.AnotherMethodThatThrows();
+			try
+			{
+				Console.WriteLine("outermost");
+				this.AnotherMethodThatThrows();
+			}
+			catch (Exception error)
+			{
+				throw new InvalidOperationException("outermost", error);
+			}
         }
 
         private void AnotherMethodThatThrows()
         {
-            throw new InvalidOperationException("Here is an exception");
+			try
+			{
+				Console.WriteLine("middle");
+				this.Deepest();
+			}
+			catch (Exception error)
+			{
+				throw new InvalidOperationException("middle", error);
+			}
         }
+		
+		private void Deepest()
+		{
+			Console.WriteLine("deepest");
+			throw new InvalidOperationException("deepest");
+		}
+		
+		private void RethrowOuter()
+		{
+			try
+			{
+				Console.WriteLine("rethrow outer");
+				RethrowInner();
+			}
+			catch (Exception error)
+			{
+				throw;
+			}
+		}
+		
+		private void RethrowInner()
+		{
+			Console.WriteLine("rethrow inner");
+			throw new InvalidOperationException("rethrow inner");
+		}
 
         public IActionResult About()
         {

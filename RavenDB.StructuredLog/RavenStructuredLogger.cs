@@ -173,6 +173,13 @@ namespace Raven.StructuredLog
             // or the message itself "Object reference not set to instance of an object".
             var uniqueMessage = origFormatString ?? message;
 
+            // Sometimes the message can contain new lines; usually when the message contains a stack trace. We don't want that. We just want the message.
+            var messageNewLineIndex = uniqueMessage.IndexOf(Environment.NewLine);
+            if (messageNewLineIndex != -1)
+            {
+                uniqueMessage = uniqueMessage.Substring(0, messageNewLineIndex);
+            }
+
             // For exceptions, we want group messages where the error is the same.
             // Two ArgumentNullExceptions from the same place in code should be grouped together by having the same hash.
             // Two ArgumentNullExceptions from different places in code should not be grouped together, and should have different hashes.
