@@ -45,6 +45,21 @@ namespace Raven.StructuredLog
         /// This list is ordered by most recent to least recent.
         /// </summary>
         public List<Log> Occurrences { get; set; } = new List<Log>();
+
+        /// <summary>
+        /// The function where the exception occurred.
+        /// </summary>
+        public string Function { get; set; }
+
+        /// <summary>
+        /// The code file where the exception occurred.
+        /// </summary>
+        public string File { get; set; }
+
+        /// <summary>
+        /// The line number where the exception occurred.
+        /// </summary>
+        public string LineNumber { get; set; }
         
         /// <summary>
         /// Adds a log to the <see cref="Occurrences"/> at the top of the list.
@@ -62,6 +77,9 @@ namespace Raven.StructuredLog
             OccurrenceCount++;
             Level = log.Level;
             MessageTemplate = log.Template ?? log.Message ?? string.Empty;
+            Function = log.Function;
+            File = log.File;
+            LineNumber = log.LineNumber;
 
             // We don't store an infinite number of logs inside Occurrences. Trim them down as configured.
             if (Occurrences.Count > RavenStructuredLoggerProvider.MaxStructuredLogOccurrences)

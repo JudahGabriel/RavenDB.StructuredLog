@@ -61,9 +61,24 @@ namespace Raven.StructuredLog
         public IDictionary<string, object> Scope { get; set; }
 
         /// <summary>
-        /// The deterministic hash code generated from the template.
+        /// The deterministic hash code used as an ID for the parent structured log. The hash code is determined from the message template for logs. For logs with exceptions, the template is generated from the exception message combined with the function/file/line of the exception.
         /// </summary>
         [JsonIgnore]
         public int TemplateHash { get; set; }
+
+        /// <summary>
+        /// The function the exception occurred in.
+        /// </summary>
+        public string Function { get; set; }
+
+        /// <summary>
+        /// The file the exception occurred in.
+        /// </summary>
+        public string File { get; set; }
+
+        /// <summary>
+        /// The line number the exception occurred on.
+        /// </summary>
+        public string LineNumber { get; set; }
     }
 }

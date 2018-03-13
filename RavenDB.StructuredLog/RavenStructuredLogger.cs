@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Raven.StructuredLog
@@ -111,13 +112,16 @@ namespace Raven.StructuredLog
                 {
                     details.Remove(originalFormat);
                 }
-
-                var structuredLogHash = GenerateStructuredHash(message, exception, details);
+                var (function, file, line) = ExtractMyFunctionAndLine(exception);
+                var structuredLogHash = GenerateStructuredHash(message, exception, details, function, file, line);
                 var log = new Log
                 {
                     Created = DateTime.UtcNow,
                     Exception = exception?.ToDetailedString(),
                     Message = message,
+                    Function = function,
+                    File = file,
+                    LineNumber = line,
                     TemplateValues = details,
                     Level = logLevel,
                     Category = categoryName,
@@ -144,7 +148,7 @@ namespace Raven.StructuredLog
             return Observable.Timer(TimeSpan.FromSeconds(2));
         }
 
-        private (int hash, string message) GenerateStructuredHash(string message, Exception exception, Dictionary<string, object> details)
+        private (int hash, string message) GenerateStructuredHash(string message, Exception exception, Dictionary<string, object> details, string function, string file, string line)
         {
             // Do we have an "{OriginalFormat}" in the details? If so, use that to generate the log structured hash.
             // {OriginalFormat} is the raw string template. It will look something like this: "Generated {length} new items".
@@ -164,15 +168,128 @@ namespace Raven.StructuredLog
                 }
             }
 
-            // Calculate the hash on the unique message (including stack trace).
-            // This causes two of the same exception (e.g. "Object reference not set to an instance of an object") to be considered different
-            // when their stack traces differ.
-            var uniqueMessage = origFormatString ?? exception?.ToString() ?? message;
-            var hash = CalculateHash(uniqueMessage);
+            // Calculate the hash on the unique message. 
+            // This is either the original format string ("{user} created {number} new items")
+            // or the message itself "Object reference not set to instance of an object".
+            var uniqueMessage = origFormatString ?? message;
 
-            // For the message of the structured log, use something simpler than the unique message.
-            var resultMessage = origFormatString ?? message;
-            return (hash, resultMessage);
+            // For exceptions, we want group messages where the error is the same.
+            // Two ArgumentNullExceptions from the same place in code should be grouped together by having the same hash.
+            // Two ArgumentNullExceptions from different places in code should not be grouped together, and should have different hashes.
+            if (exception != null && !string.IsNullOrEmpty(function))
+            {
+                uniqueMessage += " at " + function;
+                if (!string.IsNullOrEmpty(file))
+                {
+                    uniqueMessage += " in " + file;
+                    if (!string.IsNullOrEmpty(line))
+                    {
+                        uniqueMessage += " line " + line;
+                    }
+                }
+            }
+
+            var hash = CalculateHash(uniqueMessage);
+            return (hash, uniqueMessage);
+        }
+
+        private (string function, string file, string line) ExtractMyFunctionAndLine(Exception error)
+        {             
+            if (error == null || error.StackTrace == null)
+            {
+                return (string.Empty, string.Empty, string.Empty);
+            }
+
+            var atText = "at ";
+            var lineText = ":line ";
+            var inText = " in ";
+            var omittedStackLines = new[]
+            {
+                "at System.",
+                "at Microsoft.",
+                "at lambda_method",
+                "at Raven."
+            };
+
+            var stackLines = error.StackTrace
+                .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => s.Trim());
+            var appStackLines = stackLines
+                .Where(l => l.StartsWith(atText) && omittedStackLines.All(omitted => !l.StartsWith(omitted)));
+            var myFunctionWithLineNumber = appStackLines
+                .Where(l => l.Contains(lineText))
+                .FirstOrDefault();
+            var bestFunction = myFunctionWithLineNumber ?? // Use the top-most stack line that has an app function in it and a line number in it.
+                appStackLines.FirstOrDefault() ?? // No line number? use the top-most stack line that has an app function in it.
+                stackLines.LastOrDefault(l => l.Contains(lineText)) ?? // No app function? Use the top-most stack line that has a line number in it.
+                stackLines.LastOrDefault(); // No line number? Use the top-most function.
+            if (bestFunction != null)
+            {
+                // OK, we have a stack line that ideally looks something like:
+                // "at MyCompany.FooBar.Blah() in c:\builds\foobar.cs:line 625"
+                var indexOfIn = bestFunction.IndexOf(inText, atText.Length);
+                if (indexOfIn == -1)
+                {
+                    // There's no space after the function. The stack line is likely "at MyCompany.Foobar.Blah()".
+                    // This means there's no file or line number. Use only the function name.
+                    var function = FunctionWithoutNamespaces(bestFunction.Substring(atText.Length));
+                    return (function, string.Empty, string.Empty);
+                }
+                else
+                {
+                    // We have " in " after the function name, so we have a file.
+                    var function = FunctionWithoutNamespaces(bestFunction.Substring(atText.Length, indexOfIn - atText.Length));
+                    var lineIndex = bestFunction.IndexOf(lineText);
+                    var fileIndex = indexOfIn + inText.Length;
+                    if (lineIndex == -1)
+                    {
+                        // We don't have a "line: 625" bit of text.
+                        // We instead have "at MyCompany.FooBar.Blah() in c:\builds\foobar.cs"
+                        var file = FileWithoutPath(bestFunction.Substring(fileIndex));
+                        return (function, file, string.Empty);
+                    }
+                    else
+                    {
+                        // We have a line too. So, we have the ideal "at MyCompany.FooBar.Blah() in c:\builds\foobar.cs:line 625".
+                        var file = FileWithoutPath(bestFunction.Substring(fileIndex, lineIndex - fileIndex));
+                        var line = bestFunction.Substring(lineIndex + lineText.Length);
+                        return (function, file, line);
+                    }
+                }
+            }
+
+            return (string.Empty, string.Empty, string.Empty);
+        }
+
+        // This function takes a fully qualified function and turns it into just the class and function name:
+        // MyApp.Sample.HomeController.Foo() -> HomeController.Foo()
+        private static string FunctionWithoutNamespaces(string function)
+        {
+            if (string.IsNullOrEmpty(function))
+            {
+                return string.Empty;
+            }
+            
+            var period = ".";
+            var parts = function.Split(new[] { period }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length > 2)
+            {
+                return string.Join(period, parts.Skip(parts.Length - 2));
+            }
+
+            return function;
+        }
+
+        // Takes a file path and returns just the file name.
+        // c:\foo\bar.cs -> bar.cs
+        private static string FileWithoutPath(string file)
+        {
+            if (string.IsNullOrEmpty(file))
+            {
+                return string.Empty;
+            }
+
+            return System.IO.Path.GetFileName(file);
         }
 
         private string TryExtractFormatFromMessageWithDetails(string message, Dictionary<string, object> details)

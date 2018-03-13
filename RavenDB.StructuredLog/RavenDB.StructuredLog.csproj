@@ -17,7 +17,7 @@
     <AssemblyName>RavenDB.StructuredLogger</AssemblyName>
     <Title>RavenDB StructuredLogger</Title>
     <PackageId>RavenDB.StructuredLogger</PackageId>
-    <PackageTags>ravendb;logging;aspnetcore;logger;nosql;</PackageTags>
+    <PackageTags>logging;logger;structred log;ravendb;raven;nosql</PackageTags>
     <PackageProjectUrl>https://github.com/JudahGabriel/RavenDB.StructuredLog</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/JudahGabriel/RavenDB.StructuredLog</RepositoryUrl>
@@ -27,8 +27,9 @@
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <Version>4.0.1</Version>
-    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <Version>4.0.2</Version>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageReleaseNotes>Exceptions are grouped by message + function + line.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>

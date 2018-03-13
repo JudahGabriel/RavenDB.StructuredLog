@@ -41,6 +41,15 @@ namespace Sample.Controllers
                 logger.LogInformation("This message will have forty-two stored with it");
             }
 
+            try
+            {
+                CallNestedFunctionThatThrows();
+            }
+            catch (Exception error)
+            {
+                logger.LogError(error, error.Message);
+            }
+
             // Logging with multiple scopes.
             var totalCount = 777;
             using (logger.BeginScope(42)) // Plain value scopes.
@@ -51,6 +60,16 @@ namespace Sample.Controllers
             }
 
             return View();
+        }
+
+        private void CallNestedFunctionThatThrows()
+        {
+            this.AnotherMethodThatThrows();
+        }
+
+        private void AnotherMethodThatThrows()
+        {
+            throw new InvalidOperationException("Here is an exception");
         }
 
         public IActionResult About()
