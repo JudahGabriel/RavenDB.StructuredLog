@@ -171,7 +171,7 @@ namespace Raven.StructuredLog
             // Calculate the hash on the unique message. 
             // This is either the original format string ("{user} created {number} new items")
             // or the message itself "Object reference not set to instance of an object".
-            var uniqueMessage = origFormatString ?? message;
+            var uniqueMessage = (origFormatString ?? message).Trim(); // Trim because we've witnessed some messages in the wild starting with a new line.
 
             // Sometimes the message can contain new lines; usually when the message contains a stack trace. We don't want that. We just want the message.
             var messageNewLineIndex = uniqueMessage.IndexOf(Environment.NewLine);
