@@ -27,9 +27,9 @@
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <Version>4.0.3</Version>
+    <Version>4.0.4</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageReleaseNotes>Exception messages are trimmed to a single line.</PackageReleaseNotes>
+    <PackageReleaseNotes>Fixed race condition during save.</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
