@@ -484,15 +484,12 @@ namespace Raven.StructuredLog
                 {
                     dbSession.SaveChanges();
                 }
-                catch (Client.Exceptions.Documents.Session.NonUniqueObjectException)
+                catch (Client.Exceptions.Documents.Session.NonUniqueObjectException) when (hasRetried == false)
                 {
                     // This exception can happen in a small race condition: 
                     // If we check for existing ID, it's not there, then another thread saves it with that ID, then we try to save with the same ID.
                     // When this race condition happens, retry if we haven't already.
-                    if (!hasRetried)
-                    {
-                        WriteLogBatch(logs, db, true);
-                    }
+                    WriteLogBatch(logs, db, true);
                 }
             }
         }
