@@ -462,7 +462,7 @@ namespace Raven.StructuredLog
                 var structuredLogIds = logs
                     .Select(l => (id: GetStructuredLogId(l), log: l))
                     .ToList();
-                var structuredLogs = dbSession.Load<StructuredLog>(structuredLogIds.Select(l => l.id));
+                var structuredLogs = dbSession.Load<StructuredLog>(structuredLogIds.Select(l => l.id).Distinct());
                 foreach (var structuredLogInfo in structuredLogIds)
                 {
                     var existingStructuredLog = structuredLogs[structuredLogInfo.id];
