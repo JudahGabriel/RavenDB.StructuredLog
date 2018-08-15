@@ -454,7 +454,7 @@ namespace Raven.StructuredLog
         }
 
         // NOTE: this method is called on a background thread. Don't touch class members. 
-        private static void WriteLogBatch(IList<Log> logs, IDocumentStore db)
+        private static void WriteLogBatch(IList<Log> logs, IDocumentStore db, bool hasRetried = false)
         {
             // .db is a class member, but it's OK to access because it is a thread-safe class.
             using (var dbSession = db.OpenSession())
@@ -462,7 +462,7 @@ namespace Raven.StructuredLog
                 var structuredLogIds = logs
                     .Select(l => (id: GetStructuredLogId(l), log: l))
                     .ToList();
-                var structuredLogs = dbSession.Load<StructuredLog>(structuredLogIds.Select(l => l.id));
+                var structuredLogs = dbSession.Load<StructuredLog>(structuredLogIds.Select(l => l.id).Distinct());
                 foreach (var structuredLogInfo in structuredLogIds)
                 {
                     var existingStructuredLog = structuredLogs[structuredLogInfo.id];
@@ -480,7 +480,17 @@ namespace Raven.StructuredLog
                     meta["@expires"] = expireDateIsoString;
                 }
 
-                dbSession.SaveChanges();
+                try
+                {
+                    dbSession.SaveChanges();
+                }
+                catch (Client.Exceptions.Documents.Session.NonUniqueObjectException) when (hasRetried == false)
+                {
+                    // This exception can happen in a small race condition: 
+                    // If we check for existing ID, it's not there, then another thread saves it with that ID, then we try to save with the same ID.
+                    // When this race condition happens, retry if we haven't already.
+                    WriteLogBatch(logs, db, true);
+                }
             }
         }
 
