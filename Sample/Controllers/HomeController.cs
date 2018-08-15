@@ -92,7 +92,7 @@ namespace Sample.Controllers
 				Console.WriteLine("rethrow outer");
 				RethrowInner();
 			}
-			catch (Exception error)
+			catch (Exception)
 			{
 				throw;
 			}
