@@ -446,6 +446,11 @@ namespace Raven.StructuredLog
                 {
                     WriteLogBatch(logs, db);
                 }
+                catch (Client.Exceptions.Documents.Session.NonUniqueObjectException nonUniqueError)
+                {
+                    var logIds = logs.Select(l => GetStructuredLogId(l));
+                    Console.WriteLine("Unable to write logs to Raven due to non-unique IDs. IDs: {0}{1}{2}", string.Join(", ", logIds), Environment.NewLine, nonUniqueError.ToString());
+                }
                 catch (Exception error)
                 {
                     Console.WriteLine("Unable to write logs to Raven. Possibly disconnected. {0}", error.ToString());
@@ -463,16 +468,16 @@ namespace Raven.StructuredLog
                     .Select(l => (id: GetStructuredLogId(l), log: l))
                     .ToList();
                 var structuredLogs = dbSession.Load<StructuredLog>(structuredLogIds.Select(l => l.id).Distinct());
-                foreach (var structuredLogInfo in structuredLogIds)
+                foreach (var logWithId in structuredLogIds)
                 {
-                    var existingStructuredLog = structuredLogs[structuredLogInfo.id];
+                    var existingStructuredLog = structuredLogs[logWithId.id];
                     if (existingStructuredLog == null)
                     {
                         existingStructuredLog = new StructuredLog();
-                        dbSession.Store(existingStructuredLog, structuredLogInfo.id);
+                        dbSession.Store(existingStructuredLog, logWithId.id);
                     }
 
-                    existingStructuredLog.AddLog(structuredLogInfo.log);
+                    existingStructuredLog.AddLog(logWithId.log);
 
                     // Update the expiration time for this structured log.
                     var meta = dbSession.Advanced.GetMetadataFor(existingStructuredLog);
