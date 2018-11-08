@@ -10,6 +10,7 @@ using Raven.StructuredLog;
 using Raven.Client;
 using Raven.Client.Documents;
 using Microsoft.AspNetCore.Mvc;
+using Sample.Common;
 
 namespace Sample
 {
@@ -26,7 +27,7 @@ namespace Sample
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
-            
+
             // Create our Raven Structured Logger.
             var raven = this.CreateRavenDocStore();
             services.AddLogging(builder => builder.AddRavenStructuredLogger(raven));
@@ -67,9 +68,10 @@ namespace Sample
             var docStore = new DocumentStore
             {
                 Urls = new[] { "http://live-test.ravendb.net" },
-                Database = "northwind"
+                Database = "Raven.StructuredLog.Sample"
             };
             docStore.Initialize();
+            docStore.EnsureExists();
             return docStore;
         }
     }
