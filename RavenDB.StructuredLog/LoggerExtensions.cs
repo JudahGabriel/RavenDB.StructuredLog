@@ -35,9 +35,6 @@ namespace Raven.StructuredLog
             var provider = new RavenStructuredLoggerProvider(ravenDb);
             builder.AddProvider(provider);
 
-            // Install our log index that we use for grouping log messages together.
-
-
             // See if we're configured to specify the max occurrences.
             var config = builder.Services.BuildServiceProvider().GetService<IConfiguration>();
             if (config != null && int.TryParse(config["Logging:StructuredLogMaxOccurrences"], out var maxOccurrences))

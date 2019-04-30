@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="RavenDB.Client" Version="4.0.5" />
+    <PackageReference Include="RavenDB.Client" Version="4.1.5" />
     <ProjectReference Include="..\RavenDB.StructuredLog\RavenDB.StructuredLog.csproj" />
   </ItemGroup>
 
