@@ -128,8 +128,9 @@ namespace Raven.StructuredLog
                     EventId = eventId.Id == 0 && eventId.Name == null ? new EventId?() : eventId,
                     Template = structuredLogHash.message != message ? structuredLogHash.message : null, // Fill in the template only if it differs from the message.
                     TemplateHash = structuredLogHash.hash,
-                    Scope = this.ScopeToDictionary()
+                    Scope = this.ScopeToDictionary(exception)
                 };
+
                 this.logs.OnNext(log);
             }
         }
@@ -344,8 +345,22 @@ namespace Raven.StructuredLog
             return null;
         }
 
-        private IDictionary<string, object> ScopeToDictionary()
+        private IDictionary<string, object> ScopeToDictionary(Exception errorOrNull)
         {
+            // If we have an exception with Data, add that data to the scope.
+            if (errorOrNull?.Data?.Count > 0)
+            {
+                if (scopeOrNull == null)
+                {
+                    this.scopeOrNull = new ConcurrentBag<RavenStructuredLogScope>();
+                }
+
+                foreach (var dictionaryEntry in errorOrNull.Data)
+                {
+                    this.scopeOrNull.Add(new RavenStructuredLogScope(dictionaryEntry));
+                }
+            }
+
             if (this.scopeOrNull == null)
             {
                 return null;
@@ -387,6 +402,11 @@ namespace Raven.StructuredLog
                     {
                         dictionary.Add(GetUniqueDictionaryKey(dictionary, pair.Key), pair.Value);
                     }
+                }
+                else if (scopeObj.Value is System.Collections.DictionaryEntry dictionaryEntry)
+                {
+                    // This handles Exception.Data and other legacy non-generic dictionary data.
+                    dictionary.Add(GetUniqueDictionaryKey(dictionary, dictionaryEntry.Key?.ToString()), dictionaryEntry.Value);
                 }
                 else if (scopeObj.Value is KeyValuePair<string, object> pair)
                 {
