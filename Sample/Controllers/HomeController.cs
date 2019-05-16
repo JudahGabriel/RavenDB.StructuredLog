@@ -27,12 +27,14 @@ namespace Sample.Controllers
             // Logging with templates
             logger.LogInformation("The time on the server is {time}.", DateTime.UtcNow);
 
-            // Logging exceptions
+            // Logging exceptions.
             var exception = new InvalidOperationException("Foobar zanz");
+            exception.Data.Add("life, universe, everything", 42);
             logger.LogError(exception, "Woops, an error occurred");
 
             // Logging exceptions with templates
-            logger.LogError(exception, "Woops, an error occurred executing {action} at {date}", this.ControllerContext.ActionDescriptor.ActionName, DateTime.UtcNow);
+            var otherException = new ArgumentNullException();
+            logger.LogError(otherException, "Woops, an error occurred executing {action} at {date}", this.ControllerContext.ActionDescriptor.ActionName, DateTime.UtcNow);
 
             // Logging with scopes.
             // Note: Scopes will be logged only if appsettings.json has "IncludeScopes: true" inside the Logging section.

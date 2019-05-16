@@ -383,8 +383,7 @@ namespace Raven.StructuredLog
 
                 return Guid.NewGuid().ToString();
             }
-
-            
+                        
             foreach (var scopeObj in this.scopeOrNull)
             {
                 if (scopeObj.Value is Microsoft.Extensions.Logging.Internal.FormattedLogValues logValues)

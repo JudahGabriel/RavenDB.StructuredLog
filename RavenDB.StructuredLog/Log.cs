@@ -56,7 +56,7 @@ namespace Raven.StructuredLog
         public IDictionary<string, object> TemplateValues { get; set; }
 
         /// <summary>
-        /// Gets a list of scope values for the log. These will be created via logger.BeginScope(...).
+        /// Gets a list of scope values for the log. These will be created via logger.BeginScope(...) and will include the data inside the <see cref="Exception.Data"/> dictionary.
         /// </summary>
         public IDictionary<string, object> Scope { get; set; }
 

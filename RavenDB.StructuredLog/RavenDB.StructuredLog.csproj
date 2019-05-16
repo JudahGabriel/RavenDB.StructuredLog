@@ -21,15 +21,16 @@
     <PackageProjectUrl>https://github.com/JudahGabriel/RavenDB.StructuredLog</PackageProjectUrl>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/JudahGabriel/RavenDB.StructuredLog</RepositoryUrl>
-    <PackageLicenseUrl>https://github.com/JudahGabriel/RavenDB.StructuredLog/blob/master/LICENSE.md</PackageLicenseUrl>
+    <PackageLicenseUrl></PackageLicenseUrl>
     <PackageIconUrl>https://github.com/JudahGabriel/RavenDB.StructuredLog/blob/master/RavenDB.StructuredLog/nuget-icon.png?raw=true</PackageIconUrl>
-    <copyright>Copyright 2018 BitShuva</copyright>
+    <copyright>Copyright 2019 BitShuva</copyright>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <Version>4.0.7</Version>
+    <Version>4.0.8</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageReleaseNotes>Fix for non-unique ID error when logging batch of logs with same ID.</PackageReleaseNotes>
+    <PackageReleaseNotes>Added exception data to scope.</PackageReleaseNotes>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
