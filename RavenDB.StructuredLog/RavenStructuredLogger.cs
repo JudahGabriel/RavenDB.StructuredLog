@@ -477,10 +477,9 @@ namespace Raven.StructuredLog
             }
         }
 
-        // NOTE: this method is called on a background thread. Don't touch class members. 
+        // NOTE: this method is called on a background thread
         private static void WriteLogBatch(IList<Log> logs, IDocumentStore db, bool hasRetried = false)
         {
-            // .db is a class member, but it's OK to access because it is a thread-safe class.
             using (var dbSession = db.OpenSession())
             {
                 var structuredLogIds = logs
@@ -492,8 +491,34 @@ namespace Raven.StructuredLog
                     var existingStructuredLog = structuredLogs[logWithId.id];
                     if (existingStructuredLog == null)
                     {
-                        existingStructuredLog = new StructuredLog();
-                        dbSession.Store(existingStructuredLog, logWithId.id);
+                        // We don't have a StructuredLog with this exact message.
+
+                        // Do a fuzzy search using Raven Suggestions to see if there's log with a similar message.
+                        // This is needed because some software will include things like timestamps in the error 
+                        // message, making the mesage vary slightly.
+                        // If there's a similar message that varies slightly, use that as the group.
+                        if (!string.IsNullOrWhiteSpace(logWithId.log.Template) || !string.IsNullOrWhiteSpace(logWithId.log.Message))
+                        {
+                            // For simple logs, Template may be null, and we may only have message.
+                            var messageToSearch = string.IsNullOrWhiteSpace(logWithId.log.Template) ? logWithId.log.Message : logWithId.log.Template;
+                            var suggestions = dbSession.Query<StructuredLog>()
+                                .SuggestUsing(b => b.ByField(l => l.MessageTemplate, messageToSearch))
+                                .Execute();
+                            var firstSuggestion = suggestions.FirstOrDefault().Value?.Suggestions?.LastOrDefault();
+                            if (firstSuggestion != null)
+                            {
+                                existingStructuredLog = dbSession.Query<StructuredLog>()
+                                    .Search(l => l.MessageTemplate, firstSuggestion)
+                                    .FirstOrDefault();
+                            }
+                        }
+
+                        // If we still haven't found a suitable StructuredLog, it's a new message. Create and store a new StructuredLog.
+                        if (existingStructuredLog == null)
+                        {
+                            existingStructuredLog = new StructuredLog();
+                            dbSession.Store(existingStructuredLog, logWithId.id);
+                        }
                     }
 
                     existingStructuredLog.AddLog(logWithId.log);

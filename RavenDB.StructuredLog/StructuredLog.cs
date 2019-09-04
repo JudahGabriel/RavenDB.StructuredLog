@@ -76,7 +76,12 @@ namespace Raven.StructuredLog
             LastOccurrence = DateTimeOffset.UtcNow;
             OccurrenceCount++;
             Level = log.Level;
-            MessageTemplate = log.Template ?? log.Message ?? string.Empty;
+
+            if (string.IsNullOrEmpty(MessageTemplate))
+            {
+                MessageTemplate = log.Template ?? log.Message ?? string.Empty;
+            }
+
             Function = log.Function;
             File = log.File;
             LineNumber = log.LineNumber;
