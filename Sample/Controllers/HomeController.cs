@@ -26,7 +26,7 @@ namespace Sample.Controllers
 
             // Logging with templates
             logger.LogInformation("The time on the server is {time}.", DateTime.UtcNow);
-
+                        
             // Logging exceptions.
             var exception = new InvalidOperationException("Foobar zanz");
             exception.Data.Add("life, universe, everything", 42);

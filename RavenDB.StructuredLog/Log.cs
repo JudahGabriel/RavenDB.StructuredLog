@@ -80,5 +80,10 @@ namespace Raven.StructuredLog
         /// The line number the exception occurred on.
         /// </summary>
         public string LineNumber { get; set; }
+
+        /// <summary>
+        /// Internal. Used for explaining why this log was grouped with its parent.
+        /// </summary>
+        public string GroupingDetails { get; set; }
     }
 }

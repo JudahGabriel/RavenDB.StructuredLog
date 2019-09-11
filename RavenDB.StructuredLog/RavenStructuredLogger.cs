@@ -502,7 +502,12 @@ namespace Raven.StructuredLog
                             // For simple logs, Template may be null, and we may only have message.
                             var messageToSearch = string.IsNullOrWhiteSpace(logWithId.log.Template) ? logWithId.log.Message : logWithId.log.Template;
                             var suggestions = dbSession.Query<StructuredLog>()
-                                .SuggestUsing(b => b.ByField(l => l.MessageTemplate, messageToSearch))
+                                .SuggestUsing(builder => builder
+                                    .ByField(l => l.MessageTemplate, messageToSearch)
+                                    .WithOptions(new Client.Documents.Queries.Suggestions.SuggestionOptions
+                                    {
+                                        Accuracy = 0.8f // 0.9 is too strict, won't match things that should be grouped. 0.8 seems about right.
+                                    }))
                                 .Execute();
                             var firstSuggestion = suggestions.FirstOrDefault().Value?.Suggestions?.LastOrDefault();
                             if (firstSuggestion != null)
@@ -510,6 +515,10 @@ namespace Raven.StructuredLog
                                 existingStructuredLog = dbSession.Query<StructuredLog>()
                                     .Search(l => l.MessageTemplate, firstSuggestion)
                                     .FirstOrDefault();
+                                if (existingStructuredLog != null)
+                                {
+                                    logWithId.log.GroupingDetails = "Couldn't find log with exact message match, so queried for suggestions. Using last suggestion \"" + firstSuggestion + "\". Full suggestions " + string.Join("; ", suggestions.Select(s => $"Key: {s.Key}, Value.Name: {s.Value.Name}, Value.Suggestions: {string.Join(", ", s.Value.Suggestions)}"));
+                                }
                             }
                         }
 
