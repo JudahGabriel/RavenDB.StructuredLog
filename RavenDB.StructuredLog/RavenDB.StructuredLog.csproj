@@ -1,18 +1,12 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
   </PropertyGroup>
-
-  <ItemGroup>
-    <None Remove="create-nuget-package.bat" />
-    <None Remove="nuget-icon.png" />
-  </ItemGroup>
 
   <PropertyGroup>
     <Description>ILogger that structures and groups logs together and stores them in RavenDB. Makes your logs easy to reason about.</Description>
     <Authors>Judah Gabriel Himango</Authors>
-    <TargetFrameworks>netstandard2.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <AssemblyName>RavenDB.StructuredLogger</AssemblyName>
     <Title>RavenDB StructuredLogger</Title>
@@ -22,24 +16,26 @@
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/JudahGabriel/RavenDB.StructuredLog</RepositoryUrl>
     <PackageLicenseUrl></PackageLicenseUrl>
+    <PackageIcon>nuget-icon.png</PackageIcon>
     <PackageIconUrl>https://github.com/JudahGabriel/RavenDB.StructuredLog/blob/master/RavenDB.StructuredLog/nuget-icon.png?raw=true</PackageIconUrl>
     <copyright>Copyright 2019 BitShuva</copyright>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <Version>4.2.1</Version>
+    <Version>5.0.0</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageReleaseNotes>Stricter grouping for log messages that don't match existing logs.</PackageReleaseNotes>
+    <PackageReleaseNotes>Upgrade to .NET Core 3.</PackageReleaseNotes>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="2.2.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
-    <PackageReference Include="RavenDB.Client" Version="4.2.3" />
-    <PackageReference Include="System.Reactive" Version="4.1.6" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="3.0.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="3.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="3.0.1" />
+    <PackageReference Include="RavenDB.Client" Version="4.2.5" />
+    <PackageReference Include="System.Reactive" Version="4.2.0" />
+    <None Include="nuget-icon.png" Pack="true" PackagePath=""/>
   </ItemGroup>
 
 </Project>

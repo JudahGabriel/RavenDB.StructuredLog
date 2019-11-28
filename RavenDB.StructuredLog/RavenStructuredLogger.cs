@@ -386,34 +386,28 @@ namespace Raven.StructuredLog
                         
             foreach (var scopeObj in this.scopeOrNull)
             {
-                if (scopeObj.Value is Microsoft.Extensions.Logging.Internal.FormattedLogValues logValues)
+                switch (scopeObj.Value)
                 {
-                    var key = GetNextNoNameKey();
-                    dictionary.Add(key, scopeObj.Value.ToString());
-                    foreach (var pair in logValues)
-                    {
-                        dictionary.Add(GetUniqueDictionaryKey(dictionary, key + "_" + pair.Key), pair.Value);
-                    }
-                }
-                else if (scopeObj.Value is IEnumerable<KeyValuePair<string, object>> pairs)
-                {
-                    foreach (var pair in pairs)
-                    {
+                    case IEnumerable<KeyValuePair<string, object>> pairs:
+                        {
+                            foreach (var pair in pairs)
+                            {
+                                dictionary.Add(GetUniqueDictionaryKey(dictionary, pair.Key), pair.Value);
+                            }
+
+                            break;
+                        }
+
+                    case System.Collections.DictionaryEntry dictionaryEntry:
+                        // This handles Exception.Data and other legacy non-generic dictionary data.
+                        dictionary.Add(GetUniqueDictionaryKey(dictionary, dictionaryEntry.Key?.ToString()), dictionaryEntry.Value);
+                        break;
+                    case KeyValuePair<string, object> pair:
                         dictionary.Add(GetUniqueDictionaryKey(dictionary, pair.Key), pair.Value);
-                    }
-                }
-                else if (scopeObj.Value is System.Collections.DictionaryEntry dictionaryEntry)
-                {
-                    // This handles Exception.Data and other legacy non-generic dictionary data.
-                    dictionary.Add(GetUniqueDictionaryKey(dictionary, dictionaryEntry.Key?.ToString()), dictionaryEntry.Value);
-                }
-                else if (scopeObj.Value is KeyValuePair<string, object> pair)
-                {
-                    dictionary.Add(GetUniqueDictionaryKey(dictionary, pair.Key), pair.Value);
-                }
-                else
-                {
-                    dictionary.Add(GetNextNoNameKey(), scopeObj.Value);
+                        break;
+                    default:
+                        dictionary.Add(GetNextNoNameKey(), scopeObj.Value);
+                        break;
                 }
             }
 

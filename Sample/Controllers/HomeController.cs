@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Sample.Models;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Raven.StructuredLog;
+using Sample.Models;
+using System;
+using System.Diagnostics;
 
 namespace Sample.Controllers
 {
@@ -26,7 +23,7 @@ namespace Sample.Controllers
 
             // Logging with templates
             logger.LogInformation("The time on the server is {time}.", DateTime.UtcNow);
-                        
+
             // Logging exceptions.
             var exception = new InvalidOperationException("Foobar zanz");
             exception.Data.Add("life, universe, everything", 42);
@@ -42,7 +39,7 @@ namespace Sample.Controllers
             {
                 logger.LogInformation("This message will have forty-two stored with it");
             }
-            
+
             // Logging with multiple scopes.
             var totalCount = 777;
             using (logger.BeginScope(42)) // Plain value scopes.
@@ -57,54 +54,54 @@ namespace Sample.Controllers
 
         private void CallNestedFunctionThatThrows()
         {
-			try
-			{
-				Console.WriteLine("outermost");
-				this.AnotherMethodThatThrows();
-			}
-			catch (Exception error)
-			{
-				throw new InvalidOperationException("outermost", error);
-			}
+            try
+            {
+                Console.WriteLine("outermost");
+                this.AnotherMethodThatThrows();
+            }
+            catch (Exception error)
+            {
+                throw new InvalidOperationException("outermost", error);
+            }
         }
 
         private void AnotherMethodThatThrows()
         {
-			try
-			{
-				Console.WriteLine("middle");
-				this.Deepest();
-			}
-			catch (Exception error)
-			{
-				throw new InvalidOperationException("middle", error);
-			}
+            try
+            {
+                Console.WriteLine("middle");
+                this.Deepest();
+            }
+            catch (Exception error)
+            {
+                throw new InvalidOperationException("middle", error);
+            }
         }
-		
-		private void Deepest()
-		{
-			Console.WriteLine("deepest");
-			throw new InvalidOperationException("deepest");
-		}
-		
-		private void RethrowOuter()
-		{
-			try
-			{
-				Console.WriteLine("rethrow outer");
-				RethrowInner();
-			}
-			catch (Exception)
-			{
-				throw;
-			}
-		}
-		
-		private void RethrowInner()
-		{
-			Console.WriteLine("rethrow inner");
-			throw new InvalidOperationException("rethrow inner");
-		}
+
+        private void Deepest()
+        {
+            Console.WriteLine("deepest");
+            throw new InvalidOperationException("deepest");
+        }
+
+        private void RethrowOuter()
+        {
+            try
+            {
+                Console.WriteLine("rethrow outer");
+                RethrowInner();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        private void RethrowInner()
+        {
+            Console.WriteLine("rethrow inner");
+            throw new InvalidOperationException("rethrow inner");
+        }
 
         public IActionResult About()
         {
