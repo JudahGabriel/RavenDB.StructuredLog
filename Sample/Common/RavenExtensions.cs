@@ -13,10 +13,8 @@ namespace Sample.Common
         {
             try
             {
-                using (var dbSession = store.OpenSession())
-                {
-                    dbSession.Query<StructuredLog>().Take(0).ToList();
-                }
+                using var dbSession = store.OpenSession();
+                dbSession.Query<StructuredLog>().Take(0).ToList();
             }
             catch (Raven.Client.Exceptions.Database.DatabaseDoesNotExistException)
             {

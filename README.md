@@ -10,7 +10,7 @@ Old, ugly way of logging makes for thousands of opaque logs:
 - "User me@me2.com signed in at 12:0 Dec 15"
 - [and on and on for 1000+ entries - oiy!]
 
-But with structured and grouped logging, you get a fewer logs that group similar logs together and makes them searchable:
+But with structured and grouped logging, you get a _fewer_ logs that group similar logs together and makes them searchable:
 ```json
 {
     "MessageTemplate": "User {email} signed in at {date}",
@@ -55,8 +55,18 @@ The end result is humans can easily understand what errors are occurring in your
 ```csharp
 public void ConfigureServices(IServiceCollection services)
 {
+	// Create your Raven doc store
+	var docStore = new DocumentStore { ... };
+
+	// Recommended: 
+	// Avoid logging objects that contain self referenced loops.
+	// Must be done before .Initialize().
+	docStore.IgnoreSelfReferencingLoops();
+	
+	docStore.Initialize();
+
 	// Add RavenDB structured logging.
-	services.AddLogging(builder => builder.AddRavenStructuredLogger(docStore)); // Where docStore is your RavenDB DocumentStore singleton.
+	services.AddLogging(builder => builder.AddRavenStructuredLogger(docStore));  // docStore may be omitted if it's already in the DI container'
 
 	...
 }

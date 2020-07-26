@@ -1,15 +1,17 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Raven.Client;
 using Raven.Client.Documents;
+using Raven.Client.Documents.Session;
+using Raven.Client.Exceptions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace Raven.StructuredLog
 {
@@ -20,9 +22,10 @@ namespace Raven.StructuredLog
     {
         private readonly Subject<Log> logs = new Subject<Log>();
         private readonly string categoryName;
-        private ConcurrentBag<RavenStructuredLogScope> scopeOrNull; // Logger is not thread safe. However, some frameworks dispose on a background thread, causing this bag to be accessed on multipl threads.
-        private IDisposable logsSubscriptionOrNull;
-        private IDocumentStore db;
+        private ConcurrentBag<RavenStructuredLogScope>? scopeOrNull; // Logger is not thread safe. However, some frameworks dispose on a background thread, causing this bag to be accessed on multiple threads.
+        private IDisposable? logsSubscriptionOrNull;
+        private readonly IDocumentStore db;
+        private readonly LogOptions options;
 
         private const string originalFormat = "{OriginalFormat}";
 
@@ -31,10 +34,12 @@ namespace Raven.StructuredLog
         /// </summary>
         /// <param name="categoryName">The name of the logger.</param>
         /// <param name="db">The Raven <see cref="IDocumentStore"/>.</param>
-        public RavenStructuredLogger(string categoryName, IDocumentStore db)
+        /// <param name="options">The logger options containing log configuration.</param>
+        public RavenStructuredLogger(string categoryName, IDocumentStore db, LogOptions options)
         {
             this.categoryName = categoryName;
             this.db = db;
+            this.options = options;
         }
 
         /// <summary>
@@ -43,10 +48,10 @@ namespace Raven.StructuredLog
         /// <typeparam name="TState"></typeparam>
         /// <param name="state"></param>
         /// <returns></returns>
-        public IDisposable BeginScope<TState>(TState state)
+        public IDisposable? BeginScope<TState>(TState state)
         {
             // If we're not configured to use scopes, punt.
-            if (!RavenStructuredLoggerProvider.IncludeScopes)
+            if (!options.IncludeScopes)
             {
                 return null;
             }
@@ -91,7 +96,7 @@ namespace Raven.StructuredLog
                     this.logsSubscriptionOrNull = this.logs
                         .GroupByUntil(logs => 1, _ => this.CreateTimer()) // If we log a bunch in quick succession, batch them together and log in a single trip to the DB.
                         .SelectMany(logs => logs.ToList())
-                        .Subscribe(logs => TryWriteLogBatch(logs, db));
+                        .Subscribe(logs => TryWriteLogBatch(logs, db, this.options));
                 }
 
                 // Convert the state to a dictionary of name/value pairs.
@@ -149,7 +154,13 @@ namespace Raven.StructuredLog
             return Observable.Timer(TimeSpan.FromSeconds(2));
         }
 
-        private (int hash, string message) GenerateStructuredHash(string message, Exception exception, Dictionary<string, object> details, string function, string file, string line)
+        private (int hash, string message) GenerateStructuredHash(
+            string message, 
+            Exception exception, 
+            Dictionary<string, object>? details, 
+            string function, 
+            string file, 
+            string line)
         {
             // Do we have an "{OriginalFormat}" in the details? If so, use that to generate the log structured hash.
             // {OriginalFormat} is the raw string template. It will look something like this: "Generated {length} new items".
@@ -168,7 +179,7 @@ namespace Raven.StructuredLog
                     origFormatString = TryExtractFormatFromMessageWithDetails(message, details);
                 }
             }
-
+            
             // Calculate the hash on the unique message. 
             // This is either the original format string ("{user} created {number} new items")
             // or the message itself "Object reference not set to instance of an object".
@@ -246,7 +257,7 @@ namespace Raven.StructuredLog
                 else
                 {
                     // We have " in " after the function name, so we have a file.
-                    var function = FunctionWithoutNamespaces(bestFunction.Substring(atText.Length, indexOfIn - atText.Length));
+                    var function = FunctionWithoutNamespaces(bestFunction[atText.Length..indexOfIn]);
                     var lineIndex = bestFunction.IndexOf(lineText);
                     var fileIndex = indexOfIn + inText.Length;
                     if (lineIndex == -1)
@@ -259,7 +270,7 @@ namespace Raven.StructuredLog
                     else
                     {
                         // We have a line too. So, we have the ideal "at MyCompany.FooBar.Blah() in c:\builds\foobar.cs:line 625".
-                        var file = FileWithoutPath(bestFunction.Substring(fileIndex, lineIndex - fileIndex));
+                        var file = FileWithoutPath(bestFunction[fileIndex..lineIndex]);
                         var line = bestFunction.Substring(lineIndex + lineText.Length);
                         return (function, file, line);
                     }
@@ -300,14 +311,14 @@ namespace Raven.StructuredLog
             return System.IO.Path.GetFileName(file);
         }
 
-        private string TryExtractFormatFromMessageWithDetails(string message, Dictionary<string, object> details)
+        private string? TryExtractFormatFromMessageWithDetails(string message, Dictionary<string, object> details)
         {
             // There is no {OriginalFormat}. Do we have details? Some log messages include details without the original format.
             // For example, some messages will be "Request finished in 2.9422ms", and it won't contain an {OriginalFormat}.
             // However, these messages will indeed contain the details, e.g. { "Elapsed": 2.9422 }, etc.
             // If the message contains all the .ToString values of the details, we can recreate the message, e.g. "Request finished in {Elapsed}"
             var detailStrings = details
-                .Select(p => new KeyValuePair<string, string>(p.Key, p.Value?.ToString()))
+                .Select(p => new KeyValuePair<string, string>(p.Key, p.Value?.ToString() ?? string.Empty))
                 .Where(p => !string.IsNullOrEmpty(p.Value))
                 .ToList();
             var messageContainsAllDetails = detailStrings.Count > 0 && detailStrings.All(d => message.Contains(d.Value));
@@ -345,17 +356,17 @@ namespace Raven.StructuredLog
             return null;
         }
 
-        private IDictionary<string, object> ScopeToDictionary(Exception errorOrNull)
+        private IDictionary<string, object?>? ScopeToDictionary(Exception? error)
         {
             // If we have an exception with Data, add that data to the scope.
-            if (errorOrNull?.Data?.Count > 0)
+            if (error?.Data?.Count > 0)
             {
                 if (scopeOrNull == null)
                 {
                     this.scopeOrNull = new ConcurrentBag<RavenStructuredLogScope>();
                 }
 
-                foreach (var dictionaryEntry in errorOrNull.Data)
+                foreach (var dictionaryEntry in error.Data)
                 {
                     this.scopeOrNull.Add(new RavenStructuredLogScope(dictionaryEntry));
                 }
@@ -366,7 +377,7 @@ namespace Raven.StructuredLog
                 return null;
             }
 
-            var dictionary = new Dictionary<string, object>(this.scopeOrNull.Count * 3);
+            var dictionary = new Dictionary<string, object?>(this.scopeOrNull.Count * 3);
             var unnamedValues = 0;
 
             string GetNextNoNameKey()
@@ -400,7 +411,7 @@ namespace Raven.StructuredLog
 
                     case System.Collections.DictionaryEntry dictionaryEntry:
                         // This handles Exception.Data and other legacy non-generic dictionary data.
-                        dictionary.Add(GetUniqueDictionaryKey(dictionary, dictionaryEntry.Key?.ToString()), dictionaryEntry.Value);
+                        dictionary.Add(GetUniqueDictionaryKey(dictionary, dictionaryEntry.Key?.ToString() ?? string.Empty), dictionaryEntry.Value);
                         break;
                     case KeyValuePair<string, object> pair:
                         dictionary.Add(GetUniqueDictionaryKey(dictionary, pair.Key), pair.Value);
@@ -414,7 +425,7 @@ namespace Raven.StructuredLog
             return dictionary;
         }
 
-        private static string GetUniqueDictionaryKey(IDictionary<string, object> dictionary, string desired)
+        private static string GetUniqueDictionaryKey(IDictionary<string, object?> dictionary, string desired)
         {
             if (dictionary.ContainsKey(desired))
             {
@@ -450,19 +461,24 @@ namespace Raven.StructuredLog
         }
 
         // NOTE: this method is called on a background thread. Don't touch class members.
-        private static void TryWriteLogBatch(IList<Log> logs, IDocumentStore db)
+        private static void TryWriteLogBatch(IList<Log> logs, IDocumentStore db, LogOptions options)
         {
             if (logs.Count > 0)
             {
                 // This occurs on a background thread. Eat any exception.
                 try
                 {
-                    WriteLogBatch(logs, db);
+                    WriteLogBatch(logs, db, options);
                 }
                 catch (Client.Exceptions.Documents.Session.NonUniqueObjectException nonUniqueError)
                 {
                     var logIds = logs.Select(l => GetStructuredLogId(l));
                     Console.WriteLine("Unable to write logs to Raven due to non-unique IDs. IDs: {0}{1}{2}", string.Join(", ", logIds), Environment.NewLine, nonUniqueError.ToString());
+                }
+                catch (Newtonsoft.Json.JsonSerializationException serializationError)
+                    when (serializationError.Message.StartsWith("Self referencing loop detected"))
+                {
+                    Console.WriteLine("Unable to serialize a log message to Raven due to self-referencing loop. To fix this, please call docStore.IgnoreSelfRefencingLoops() during app startup. {0}", serializationError);
                 }
                 catch (Exception error)
                 {
@@ -472,78 +488,96 @@ namespace Raven.StructuredLog
         }
 
         // NOTE: this method is called on a background thread
-        private static void WriteLogBatch(IList<Log> logs, IDocumentStore db, bool hasRetried = false)
+        private static void WriteLogBatch(IList<Log> logs, IDocumentStore db, LogOptions options, bool hasRetried = false)
         {
-            using (var dbSession = db.OpenSession())
+            using var dbSession = db.OpenSession();
+            var structuredLogIds = logs
+                .Select(l => (id: GetStructuredLogId(l), log: l))
+                .ToList();
+            var structuredLogs = dbSession.Load<StructuredLog?>(structuredLogIds.Select(l => l.id).Distinct());
+            foreach (var (id, log) in structuredLogIds)
             {
-                var structuredLogIds = logs
-                    .Select(l => (id: GetStructuredLogId(l), log: l))
-                    .ToList();
-                var structuredLogs = dbSession.Load<StructuredLog>(structuredLogIds.Select(l => l.id).Distinct());
-                foreach (var logWithId in structuredLogIds)
+                var existingStructuredLog = structuredLogs[id];
+                if (existingStructuredLog == null)
                 {
-                    var existingStructuredLog = structuredLogs[logWithId.id];
+                    // We don't have a StructuredLog with this exact message.
+                    // See if we have one with a fuzzy match.
+                    existingStructuredLog = FindExistingLogFuzzyMatch(dbSession, log, options.FuzzyLogSearchAccuracy);
+
+                    // If we still haven't found a suitable StructuredLog, it's a new message. Create and store a new StructuredLog.
                     if (existingStructuredLog == null)
                     {
-                        // We don't have a StructuredLog with this exact message.
-
-                        // Do a fuzzy search using Raven Suggestions to see if there's log with a similar message.
-                        // This is needed because some software will include things like timestamps in the error 
-                        // message, making the mesage vary slightly.
-                        // If there's a similar message that varies slightly, use that as the group.
-                        if (!string.IsNullOrWhiteSpace(logWithId.log.Template) || !string.IsNullOrWhiteSpace(logWithId.log.Message))
-                        {
-                            // For simple logs, Template may be null, and we may only have message.
-                            var messageToSearch = string.IsNullOrWhiteSpace(logWithId.log.Template) ? logWithId.log.Message : logWithId.log.Template;
-                            var suggestions = dbSession.Query<StructuredLog>()
-                                .SuggestUsing(builder => builder
-                                    .ByField(l => l.MessageTemplate, messageToSearch)
-                                    .WithOptions(new Client.Documents.Queries.Suggestions.SuggestionOptions
-                                    {
-                                        Accuracy = 0.8f // 0.9 is too strict, won't match things that should be grouped. 0.8 seems about right.
-                                    }))
-                                .Execute();
-                            var firstSuggestion = suggestions.FirstOrDefault().Value?.Suggestions?.LastOrDefault();
-                            if (firstSuggestion != null)
-                            {
-                                existingStructuredLog = dbSession.Query<StructuredLog>()
-                                    .Search(l => l.MessageTemplate, firstSuggestion)
-                                    .FirstOrDefault();
-                                if (existingStructuredLog != null)
-                                {
-                                    logWithId.log.GroupingDetails = "Couldn't find log with exact message match, so queried for suggestions. Using last suggestion \"" + firstSuggestion + "\". Full suggestions " + string.Join("; ", suggestions.Select(s => $"Key: {s.Key}, Value.Name: {s.Value.Name}, Value.Suggestions: {string.Join(", ", s.Value.Suggestions)}"));
-                                }
-                            }
-                        }
-
-                        // If we still haven't found a suitable StructuredLog, it's a new message. Create and store a new StructuredLog.
-                        if (existingStructuredLog == null)
-                        {
-                            existingStructuredLog = new StructuredLog();
-                            dbSession.Store(existingStructuredLog, logWithId.id);
-                        }
+                        existingStructuredLog = new StructuredLog();
+                        dbSession.Store(existingStructuredLog, id);
                     }
-
-                    existingStructuredLog.AddLog(logWithId.log);
-
-                    // Update the expiration time for this structured log.
-                    var meta = dbSession.Advanced.GetMetadataFor(existingStructuredLog);
-                    var expireDateIsoString = DateTime.UtcNow.AddDays(RavenStructuredLoggerProvider.ExpirationInDays).ToString("o", System.Globalization.CultureInfo.InvariantCulture);
-                    meta["@expires"] = expireDateIsoString;
                 }
 
+                existingStructuredLog.AddLog(log, options.MaxOccurrences);
+
+                // Update the expiration time for this structured log.
+                var meta = dbSession.Advanced.GetMetadataFor(existingStructuredLog);
+                var expireDateIsoString = DateTime.UtcNow.AddDays(options.ExpirationInDays).ToString("o", System.Globalization.CultureInfo.InvariantCulture);
+                meta["@expires"] = expireDateIsoString;
+            }
+
+            try
+            {
+                dbSession.SaveChanges();
+            }
+            catch (Client.Exceptions.Documents.Session.NonUniqueObjectException)
+                when (hasRetried == false)
+            {
+                // This exception can happen in a small race condition: 
+                // If we check for existing ID, it's not there, then another thread saves it with that ID, then we try to save with the same ID.
+                // When this race condition happens, retry if we haven't already.
+                WriteLogBatch(logs, db, options, true);
+            }
+        }
+
+        private static StructuredLog? FindExistingLogFuzzyMatch(IDocumentSession dbSession, Log log, float fuzzySearchAccuracy)
+        {
+            // Do a fuzzy search using Raven Suggestions to see if there's log with a similar message.
+            // This is needed because some software will include things like timestamps in the error 
+            // message, making the mesage vary ever so slightly.
+            // If there's a similar message that varies slightly, use that as the group.
+            if (!string.IsNullOrWhiteSpace(log.Template) || !string.IsNullOrWhiteSpace(log.Message))
+            {
+                // For simple logs, Template may be null, and we may only have message.
+                var messageToSearch = string.IsNullOrWhiteSpace(log.Template) ? log.Message : log.Template;
                 try
                 {
-                    dbSession.SaveChanges();
+                    var suggestions = dbSession.Query<StructuredLog>()
+                        .SuggestUsing(builder => builder
+                            .ByField(l => l.MessageTemplate, messageToSearch)
+                            .WithOptions(new Client.Documents.Queries.Suggestions.SuggestionOptions
+                            {
+                                Accuracy =  fuzzySearchAccuracy
+                            }
+                        ))
+                        .Execute();
+
+                    var firstSuggestion = suggestions.FirstOrDefault().Value?.Suggestions?.LastOrDefault();
+                    if (firstSuggestion != null)
+                    {
+                        var existingStructuredLog = dbSession.Query<StructuredLog>()
+                            .Search(l => l.MessageTemplate, firstSuggestion)
+                            .FirstOrDefault();
+                        if (existingStructuredLog != null)
+                        {
+                            log.GroupingDetails = "Couldn't find log with exact message match, so queried for suggestions. Using last suggestion \"" + firstSuggestion + "\". Full suggestions " + string.Join("; ", suggestions.Select(s => $"Key: {s.Key}, Value.Name: {s.Value.Name}, Value.Suggestions: {string.Join(", ", s.Value.Suggestions)}"));
+                        }
+                    }
                 }
-                catch (Client.Exceptions.Documents.Session.NonUniqueObjectException) when (hasRetried == false)
+                catch (InvalidQueryException queryError)
                 {
-                    // This exception can happen in a small race condition: 
-                    // If we check for existing ID, it's not there, then another thread saves it with that ID, then we try to save with the same ID.
-                    // When this race condition happens, retry if we haven't already.
-                    WriteLogBatch(logs, db, true);
+                    // It would see some versions of Raven can't dynamically create indexes with Suggestions.
+                    // See https://github.com/JudahGabriel/RavenDB.StructuredLog/issues/3
+                    // Catch this error here and punt.
+                    Console.WriteLine("Unable to search logs using fuzzy match searching. Skipping fuzzy search. Error details: {0}", queryError);
                 }
             }
+
+            return null;
         }
 
         private static string GetStructuredLogId(Log log)

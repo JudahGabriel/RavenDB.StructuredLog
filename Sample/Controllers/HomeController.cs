@@ -52,57 +52,6 @@ namespace Sample.Controllers
             return View();
         }
 
-        private void CallNestedFunctionThatThrows()
-        {
-            try
-            {
-                Console.WriteLine("outermost");
-                this.AnotherMethodThatThrows();
-            }
-            catch (Exception error)
-            {
-                throw new InvalidOperationException("outermost", error);
-            }
-        }
-
-        private void AnotherMethodThatThrows()
-        {
-            try
-            {
-                Console.WriteLine("middle");
-                this.Deepest();
-            }
-            catch (Exception error)
-            {
-                throw new InvalidOperationException("middle", error);
-            }
-        }
-
-        private void Deepest()
-        {
-            Console.WriteLine("deepest");
-            throw new InvalidOperationException("deepest");
-        }
-
-        private void RethrowOuter()
-        {
-            try
-            {
-                Console.WriteLine("rethrow outer");
-                RethrowInner();
-            }
-            catch (Exception)
-            {
-                throw;
-            }
-        }
-
-        private void RethrowInner()
-        {
-            Console.WriteLine("rethrow inner");
-            throw new InvalidOperationException("rethrow inner");
-        }
-
         public IActionResult About()
         {
             ViewData["Message"] = "Your application description page.";

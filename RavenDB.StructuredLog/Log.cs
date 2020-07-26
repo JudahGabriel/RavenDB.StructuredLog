@@ -15,13 +15,13 @@ namespace Raven.StructuredLog
         /// The formatted output message generated from the <see cref="Template"/>.
         /// If the <see cref="Template"/> is "The user {email} logged in", this Message will be "The user foo@bar.com logged in".
         /// </summary>
-        public string Message { get; set; }
+        public string? Message { get; set; }
 
         /// <summary>
         /// The template for the message. For example, "The user {email} logged in. May be null in the case where no template string was used.
         /// </summary>
         [JsonIgnore]
-        public string Template { get; set; }
+        public string? Template { get; set; }
 
         /// <summary>
         /// The log level.
@@ -37,12 +37,12 @@ namespace Raven.StructuredLog
         /// The exception as a detailed string, if any exception occurred.
         /// This is a string, rather than the actual exception, because the exception may (and often does) contain self-referencing objects, resulting in exceptions during serialization.
         /// </summary>
-        public string Exception { get; set; }
+        public string? Exception { get; set; }
 
         /// <summary>
         /// The log category. This is typically the type of the logger that created this log instance.
         /// </summary>
-        public string Category { get; set; }
+        public string? Category { get; set; }
 
         /// <summary>
         /// The EventId that created the log.
@@ -53,12 +53,12 @@ namespace Raven.StructuredLog
         /// The key and value pairs extracted from the <see cref="Template"/>.
         /// For example, if the <see cref="Template"/> is "The user {email} logged in", this will contain { "email", "foo@bar.com" }
         /// </summary>
-        public IDictionary<string, object> TemplateValues { get; set; }
+        public IDictionary<string, object>? TemplateValues { get; set; }
 
         /// <summary>
         /// Gets a list of scope values for the log. These will be created via logger.BeginScope(...) and will include the data inside the <see cref="Exception.Data"/> dictionary.
         /// </summary>
-        public IDictionary<string, object> Scope { get; set; }
+        public IDictionary<string, object?>? Scope { get; set; }
 
         /// <summary>
         /// The deterministic hash code used as an ID for the parent structured log. The hash code is determined from the message template for logs. For logs with exceptions, the template is generated from the exception message combined with the function/file/line of the exception.
@@ -69,21 +69,21 @@ namespace Raven.StructuredLog
         /// <summary>
         /// The function the exception occurred in.
         /// </summary>
-        public string Function { get; set; }
+        public string? Function { get; set; }
 
         /// <summary>
         /// The file the exception occurred in.
         /// </summary>
-        public string File { get; set; }
+        public string? File { get; set; }
 
         /// <summary>
         /// The line number the exception occurred on.
         /// </summary>
-        public string LineNumber { get; set; }
+        public string? LineNumber { get; set; }
 
         /// <summary>
         /// Internal. Used for explaining why this log was grouped with its parent.
         /// </summary>
-        public string GroupingDetails { get; set; }
+        public string? GroupingDetails { get; set; }
     }
 }

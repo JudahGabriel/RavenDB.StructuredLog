@@ -10,16 +10,17 @@ namespace Raven.StructuredLog
     public class RavenStructuredLoggerProvider : ILoggerProvider
     {
         private readonly IDocumentStore db;
-        private const int DefaultMaxStrucutedLogOccurrences = 20; // number of logs to store in a StructuredLog
-        private const int DefaultExpirationInDays = 365; // StructuredLogs that haven't been updated in N days will be deleted.
+        private readonly LogOptions options;
 
         /// <summary>
         /// Creates a new instance.
         /// </summary>
-        /// <param name="db">The RavenDB <see cref="IDocumentStore"/> instance to store the logs with.</param>
-        public RavenStructuredLoggerProvider(IDocumentStore db)
+        /// <param name="db">The Raven document store to send the logs to.</param>
+        /// <param name="options">The log options.</param>
+        public RavenStructuredLoggerProvider(IDocumentStore db, LogOptions options)
         {
             this.db = db ?? throw new ArgumentNullException(nameof(db));
+            this.options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
         /// <summary>
@@ -29,7 +30,7 @@ namespace Raven.StructuredLog
         /// <returns></returns>
         public ILogger CreateLogger(string categoryName)
         {
-            return new RavenStructuredLogger(categoryName, this.db);
+            return new RavenStructuredLogger(categoryName, this.db, this.options);
         }
 
         /// <summary>
@@ -38,9 +39,5 @@ namespace Raven.StructuredLog
         public void Dispose()
         {
         }
-
-        internal static bool IncludeScopes { get; set; } = true;
-        internal static int MaxStructuredLogOccurrences { get; set; } = DefaultMaxStrucutedLogOccurrences;
-        internal static int ExpirationInDays { get; set; } = DefaultExpirationInDays;
     }
 }

@@ -73,9 +73,8 @@ namespace Raven.StructuredLog
             {
                 var innerPropertyName = $"[{i}]";
 
-                if (item is Exception)
+                if (item is Exception innerException)
                 {
-                    var innerException = (Exception)item;
                     AppendException(
                         stringBuilder,
                         innerPropertyName,
@@ -109,25 +108,18 @@ namespace Raven.StructuredLog
             stringBuilder.AppendLine(innerExceptionString);
         }
 
-        private static string IndentString(string value, ExceptionOptions options)
-        {
-            return value.Replace(Environment.NewLine, Environment.NewLine + options.Indent);
-        }
-
         private static void AppendValue(
             StringBuilder stringBuilder,
             string propertyName,
-            object value,
+            object? value,
             ExceptionOptions options)
         {
-            if (value is DictionaryEntry)
+            if (value is DictionaryEntry dictionaryEntry)
             {
-                DictionaryEntry dictionaryEntry = (DictionaryEntry)value;
                 stringBuilder.AppendLine($"{options.Indent}{propertyName} = {dictionaryEntry.Key} : {dictionaryEntry.Value}");
             }
-            else if (value is Exception)
+            else if (value is Exception innerException)
             {
-                var innerException = (Exception)value;
                 AppendException(
                     stringBuilder,
                     propertyName,

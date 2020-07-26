@@ -11,12 +11,12 @@ namespace Raven.StructuredLog
     {
         private readonly Subject<Unit> disposedSignal = new Subject<Unit>();
 
-        public RavenStructuredLogScope(object value)
+        public RavenStructuredLogScope(object? value)
         {
             this.Value = value;
         }
 
-        public object Value { get; private set; }
+        public object? Value { get; private set; }
         public IObservable<Unit> Disposed => this.disposedSignal;
 
         public void Dispose()
