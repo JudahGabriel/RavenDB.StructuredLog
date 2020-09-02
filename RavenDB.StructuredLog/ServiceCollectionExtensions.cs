@@ -18,16 +18,34 @@ namespace Raven.StructuredLog
         /// Adds Raven.StructuredLogger to the logging capabilities.
         /// </summary>
         /// <param name="services">The DI services.</param>
+        /// <param name="docStore">The Raven <see cref="DocumentStore"/> to store the logs in.</param>
+        /// <param name="configAction">The configuration action.</param>
+        /// <returns></returns>
+        public static IServiceCollection AddRavenStructuredLogger(this IServiceCollection services, IDocumentStore docStore, Action<LogOptions> configAction)
+        {
+            return AddLogger(services, docStore, configAction);
+        }
+
+        /// <summary>
+        /// Adds Raven.StructuredLogger to the logging capabilities.
+        /// </summary>
+        /// <param name="services">The DI services.</param>
         /// <param name="configAction">The configuration action.</param>
         /// <returns></returns>
         public static IServiceCollection AddRavenStructuredLogger(this IServiceCollection services, Action<LogOptions> configAction)
         {
-            return services.AddSingleton<ILoggerProvider>(provider =>
-            {
-                var logger = CreateLogProvider(provider, configAction);
-                services.AddLogging(builder => builder.AddProvider(logger));
-                return logger;
-            });
+            return AddLogger(services, null, configAction);
+        }
+
+        /// <summary>
+        /// Adds Raven.StructuredLogger to the logging capabilities.
+        /// </summary>
+        /// <param name="services">The DI services.</param>
+        /// <param name="docStore">The Raven <see cref="DocumentStore"/> to store the logs in.</param>
+        /// <returns></returns>
+        public static IServiceCollection AddRavenStructuredLogger(this IServiceCollection services, IDocumentStore docStore)
+        {
+            return AddLogger(services, docStore, null);
         }
 
         /// <summary>
@@ -37,13 +55,23 @@ namespace Raven.StructuredLog
         /// <returns></returns>
         public static IServiceCollection AddRavenStructuredLogger(this IServiceCollection services)
         {
-            return AddRavenStructuredLogger(services, (_) => { });
+            return AddLogger(services, null, null);
         }
 
-        private static RavenStructuredLoggerProvider CreateLogProvider(IServiceProvider provider, Action<LogOptions> configAction)
+        private static IServiceCollection AddLogger(IServiceCollection services, IDocumentStore? docStore, Action<LogOptions>? configAction)
+        {
+            return services.AddSingleton<ILoggerProvider>(provider =>
+            {
+                var logger = CreateLogProvider(provider, docStore, configAction);
+                services.AddLogging(builder => builder.AddProvider(logger));
+                return logger;
+            });
+        }
+
+        private static RavenStructuredLoggerProvider CreateLogProvider(IServiceProvider provider, IDocumentStore? docStore, Action<LogOptions>? configAction)
         {
             var config = provider.GetRequiredService<IConfiguration>();
-            var db = provider.GetRequiredService<IDocumentStore>();
+            var db = docStore ?? provider.GetRequiredService<IDocumentStore>();
             var options = new LogOptions();
 
             if (int.TryParse(config["Logging:MaxOccurrences"], out var maxOccurrences))
