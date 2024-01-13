@@ -36,7 +36,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageReleaseNotes>Upgrades to .NET 8, Raven 6</PackageReleaseNotes>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RootNamespace>Raven.StructuredLog</RootNamespace>
+    <RootNamespace>Raven.StructuredLogger</RootNamespace>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>

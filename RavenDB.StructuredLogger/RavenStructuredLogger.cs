@@ -13,7 +13,7 @@ using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace Raven.StructuredLog
+namespace Raven.StructuredLogger
 {
     /// <summary>
     /// Log provider that sends messages to RavenDB asynchronously.

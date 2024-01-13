@@ -1,5 +1,5 @@
 ﻿using Raven.Client.Documents;
-using Raven.StructuredLog;
+using Raven.StructuredLogger;
 using System;
 using System.Collections.Generic;
 using System.Linq;

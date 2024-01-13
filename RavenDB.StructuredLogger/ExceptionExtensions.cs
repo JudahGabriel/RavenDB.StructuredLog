@@ -4,7 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace Raven.StructuredLog
+namespace Raven.StructuredLogger
 {
     /// <summary>
     /// Extensions for stringifying exceptions.

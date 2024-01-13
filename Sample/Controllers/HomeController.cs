@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Raven.StructuredLog;
+using Raven.StructuredLogger;
 using Sample.Models;
 using System;
 using System.Diagnostics;

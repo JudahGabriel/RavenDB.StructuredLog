@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Raven.Client.Documents;
 
-namespace Raven.StructuredLog
+namespace Raven.StructuredLogger
 {
     /// <summary>
     /// 

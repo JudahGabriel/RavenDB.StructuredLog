@@ -2,7 +2,7 @@
 using Raven.Client.Documents;
 using System;
 
-namespace Raven.StructuredLog
+namespace Raven.StructuredLogger
 {
     /// <summary>
     /// Logging provider that structures and groups logs and stores them in RavenDB.

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Raven.StructuredLog
+namespace Raven.StructuredLogger
 {
     /// <summary>
     /// Options for configuring Raven.StructuredLog.

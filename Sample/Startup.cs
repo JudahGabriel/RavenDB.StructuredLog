@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Raven.Client.Documents;
-using Raven.StructuredLog;
+using Raven.StructuredLogger;
 using Sample.Common;
 
 namespace Sample

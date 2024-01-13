@@ -5,7 +5,7 @@ using Raven.Client.Documents;
 using System;
 using System.Collections.Generic;
 
-namespace Raven.StructuredLog
+namespace Raven.StructuredLogger
 {
     /// <summary>
     /// Adds RavenStructuredLog-specific extensions to <see cref="ILogger"/> and <see cref="ILoggingBuilder"/>.
