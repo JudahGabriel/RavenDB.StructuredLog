@@ -66,7 +66,7 @@ public void ConfigureServices(IServiceCollection services)
 	docStore.Initialize();
 
 	// Add RavenDB structured logging.
-	services.AddLogging(builder => builder.AddRavenStructuredLogger(docStore));  // docStore may be omitted if it's already in the DI container'
+	services.AddRavenStructuredLogger(docStore);  // docStore may be omitted if it's already in the DI container
 
 	...
 }
