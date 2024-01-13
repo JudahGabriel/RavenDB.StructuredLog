@@ -48,7 +48,7 @@ namespace Raven.StructuredLog
         /// <typeparam name="TState"></typeparam>
         /// <param name="state"></param>
         /// <returns></returns>
-        public IDisposable? BeginScope<TState>(TState state)
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull
         {
             // If we're not configured to use scopes, punt.
             if (!options.IncludeScopes)
@@ -87,7 +87,7 @@ namespace Raven.StructuredLog
         /// <param name="state"></param>
         /// <param name="exception"></param>
         /// <param name="formatter"></param>
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception exception, Func<TState, Exception, string> formatter)
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string>? formatter)
         {
             if (this.IsEnabled(logLevel))
             {
@@ -109,8 +109,8 @@ namespace Raven.StructuredLog
                         details.Add(pair.Key, pair.Value);
                     }
                 }
-                
-                var message = formatter(state, exception);
+
+                var message = formatter?.Invoke(state, exception) ?? state?.ToString() ?? string.Empty;
 
                 // If the message is the same as the {OriginalFormat}, don't store the original format; it's duplicate data.
                 if (details != null && details.TryGetValue(originalFormat, out var origFormatValue) && (origFormatValue as string) == message)
@@ -156,7 +156,7 @@ namespace Raven.StructuredLog
 
         private (int hash, string message) GenerateStructuredHash(
             string message, 
-            Exception exception, 
+            Exception? exception, 
             Dictionary<string, object>? details, 
             string function, 
             string file, 
@@ -212,7 +212,7 @@ namespace Raven.StructuredLog
             return (hash, uniqueMessage);
         }
 
-        private (string function, string file, string line) ExtractMyFunctionAndLine(Exception error)
+        private (string function, string file, string line) ExtractMyFunctionAndLine(Exception? error)
         {             
             if (error == null || error.StackTrace == null)
             {

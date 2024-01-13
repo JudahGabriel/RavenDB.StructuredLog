@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29509.3
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34408.163
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RavenDB.StructuredLog", "RavenDB.StructuredLog\RavenDB.StructuredLog.csproj", "{E5E99DB9-C896-4249-BAB2-98D5541A66CB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RavenDB.StructuredLogger", "RavenDB.StructuredLogger\RavenDB.StructuredLogger.csproj", "{E5E99DB9-C896-4249-BAB2-98D5541A66CB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{721A4796-1DA5-4DE9-AFAE-0D1BA0013CCA}"
 	ProjectSection(SolutionItems) = preProject

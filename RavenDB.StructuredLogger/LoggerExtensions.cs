@@ -19,7 +19,7 @@ namespace Raven.StructuredLog
         /// <param name="key">The name of the key.</param>
         /// <param name="value">The value.</param>
         /// <returns>A logging operation scope.</returns>
-        public static IDisposable BeginKeyValueScope(this ILogger logger, string key, object value)
+        public static IDisposable? BeginKeyValueScope(this ILogger logger, string key, object value)
         {
             return logger.BeginScope(new KeyValuePair<string, object>(key, value));
         }
