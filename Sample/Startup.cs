@@ -34,10 +34,6 @@ namespace Sample
             // 3. Tell ASP.NET to use Raven Structured Log for logging.
             services.AddRavenStructuredLogger();
 
-            // Alternately, call .AddRavenStructuredLogger() without parameters to
-            // instruct the logger to find your IDocumentStore via dependency injection services.
-            //services.AddSingleton(raven);
-            //services.AddLogging(builder => builder.AddRavenStructuredLogger());
             services.AddControllersWithViews();
         }
 

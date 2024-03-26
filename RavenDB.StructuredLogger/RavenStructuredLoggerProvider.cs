@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Raven.Client.Documents;
 using System;
 
@@ -9,18 +12,14 @@ namespace Raven.StructuredLogger
     /// </summary>
     public class RavenStructuredLoggerProvider : ILoggerProvider
     {
-        private readonly IDocumentStore db;
-        private readonly LogOptions options;
+        private IDocumentStore? db;
+        private LogOptions? options;
 
         /// <summary>
         /// Creates a new instance.
         /// </summary>
-        /// <param name="db">The Raven document store to send the logs to.</param>
-        /// <param name="options">The log options.</param>
-        public RavenStructuredLoggerProvider(IDocumentStore db, LogOptions options)
+        public RavenStructuredLoggerProvider()
         {
-            this.db = db ?? throw new ArgumentNullException(nameof(db));
-            this.options = options ?? throw new ArgumentNullException(nameof(options));
         }
 
         /// <summary>
@@ -30,7 +29,45 @@ namespace Raven.StructuredLogger
         /// <returns></returns>
         public ILogger CreateLogger(string categoryName)
         {
+            // If we haven't been initialized yet, return a null logger.
+            if (db == null || options == null)
+            {
+                return NullLogger.Instance;
+            }
+
             return new RavenStructuredLogger(categoryName, this.db, this.options);
+        }
+
+        internal void Initialize(IServiceProvider provider, IDocumentStore? docStore, Action<LogOptions>? configAction)
+        {
+            this.options = new LogOptions();
+            this.db = docStore ?? provider.GetRequiredService<IDocumentStore>();
+            var config = provider.GetRequiredService<IConfiguration>();
+
+            if (int.TryParse(config["Logging:MaxOccurrences"], out var maxOccurrences))
+            {
+                options.MaxOccurrences = maxOccurrences;
+            }
+
+            // See if we're configured to use scopes.
+            if (bool.TryParse(config["Logging:IncludeScopes"], out var includeScopes))
+            {
+                options.IncludeScopes = includeScopes;
+            }
+
+            // See if we're configured to expire logs.
+            if (int.TryParse(config["Logging:ExpirationInDays"], out var expirationInDays))
+            {
+                options.ExpirationInDays = expirationInDays;
+            }
+
+            // See if we're configured to expire logs.
+            if (float.TryParse(config["Logging:FuzzyLogSearchAccuracy"], out var fuzzyLogSearchAccuracy))
+            {
+                options.FuzzyLogSearchAccuracy = fuzzyLogSearchAccuracy;
+            }
+
+            configAction?.Invoke(options);
         }
 
         /// <summary>
