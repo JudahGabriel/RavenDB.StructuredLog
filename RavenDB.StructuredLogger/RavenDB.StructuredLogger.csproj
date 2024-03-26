@@ -29,13 +29,13 @@
     </PackageLicenseUrl>
     <PackageIcon>nuget-icon.png</PackageIcon>
     <PackageIconUrl>https://github.com/JudahGabriel/RavenDB.StructuredLog/blob/master/RavenDB.StructuredLog/nuget-icon.png?raw=true</PackageIconUrl>
-    <copyright>Copyright 2020 BitShuva</copyright>
+    <copyright>Copyright 2024 BitShuva</copyright>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
     <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <Version>7.0.0</Version>
+    <Version>7.1.0</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageReleaseNotes>Upgrades to .NET 8, Raven 6</PackageReleaseNotes>
+    <PackageReleaseNotes>Initialization works with CreateBuilder() in modern ASP.NET apps</PackageReleaseNotes>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RootNamespace>Raven.StructuredLogger</RootNamespace>
     <PackageReadmeFile>README.md</PackageReadmeFile>
